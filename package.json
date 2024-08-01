@@ -1,0 +1,33 @@
+{
+  "name": "server",
+  "module": "index.ts",
+  "type": "module",
+  "scripts": {
+    "start": "bun index.ts",
+    "dev": "bun --watch index.ts"
+  },
+  "dependencies": {
+    "@hono/node-server": "^1.12.0",
+    "@hono/zod-validator": "^0.2.2",
+    "@lucia-auth/adapter-drizzle": "^1.0.7",
+    "@neondatabase/serverless": "^0.9.3",
+    "bcryptjs": "^2.4.3",
+    "dotenv": "^16.4.5",
+    "drizzle-orm": "^0.31.2",
+    "hono": "^4.5.3",
+    "lucia": "^3.2.0",
+    "nodemailer": "^6.9.14",
+    "qrcode": "^1.5.3",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
+    "@types/bun": "latest",
+    "@types/nodemailer": "^6.4.15",
+    "drizzle-kit": "^0.22.5",
+    "pg": "^8.12.0"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  }
+}
