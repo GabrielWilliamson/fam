@@ -8,6 +8,6 @@ export default defineConfig({
   dbCredentials: {
     url: process.env.DATABASE_URL!,
   },
-  schema: "./server/db/schemas.ts",
-  out: "./server/db/migrations.ts",
+  schema: "./db/schemas.ts",
+  out: "./db/migrations.ts",
 });

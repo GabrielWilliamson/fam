@@ -15,6 +15,8 @@ const {
   locationsRoute,
   authRoute,
   datesRoute,
+  queriesRoute,
+  fileRoute,
 } = route;
 
 import dotenv from "dotenv";
@@ -34,7 +36,9 @@ const routes = app
   .route("/doctors", doctorRoute)
   .route("/patients", patientsRoute)
   .route("/locations", locationsRoute)
-  .route("/dates", datesRoute);
+  .route("/dates", datesRoute)
+  .route("/file", fileRoute)
+  .route("/queries", queriesRoute);
 
 app.get("*", serveStatic({ root: "./static" }));
 app.get("*", serveStatic({ path: "./static/index.html" }));

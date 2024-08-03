@@ -7,7 +7,7 @@ import {
   type tPediatricPatientSchema,
 } from "../schemas/patientSchema";
 import { db } from "../db/db";
-import { Patients, Files, Doctors, Users } from "../db/schemas";
+import { Patients, Files, Doctors, Users, Relatives } from "../db/schemas";
 import { and, eq, sql } from "drizzle-orm";
 import type {
   tablePatients,
@@ -23,9 +23,7 @@ import {
   transformOrigin,
 } from "../lib/patients";
 import doctorIdentification from "../lib/doctorIdentification";
-import { departmentsFull } from "../lib/locations";
 import type { z } from "zod";
-import { date } from "drizzle-orm/pg-core";
 
 type ApiResponse<T = {}> = {
   success: boolean;
@@ -39,8 +37,7 @@ export const patientsRoute = new Hono<{ Variables: authVariables }>()
   .get("/all", async (c) => {
     const user = c.get("user");
     if (!user) return c.json({ success: false, data: [] }, 401);
-    if (user.role === "ADMIN")
-      return c.json({ success: false, data: [] }, 401);
+    if (user.role === "ADMIN") return c.json({ success: false, data: [] }, 401);
 
     const patients = await db
       .select({
@@ -295,11 +292,14 @@ export const patientsRoute = new Hono<{ Variables: authVariables }>()
   //SEARCH FOR SEND SMS
   .get("/sms", async (c) => {
     const user = c.get("user");
-    if (!user) return c.json({ success: false, error: "No autorizado", data: [] }, 401);
-    if (user.role === "ADMIN") return c.json({ success: false, error: "No autorizado", data: [] }, 401);
+    if (!user)
+      return c.json({ success: false, error: "No autorizado", data: [] }, 401);
+    if (user.role === "ADMIN")
+      return c.json({ success: false, error: "No autorizado", data: [] }, 401);
 
     const id = c.req.query("id");
-    if (!id) return c.json({ success: false, error: "id requerido", data: [] }, 500);
+    if (!id)
+      return c.json({ success: false, error: "id requerido", data: [] }, 500);
 
     let patient = await db
       .select({
@@ -321,6 +321,30 @@ export const patientsRoute = new Hono<{ Variables: authVariables }>()
       isPatient: true,
       relative: "",
     });
+
+    const relatives = await db
+      .select({
+        id: Relatives.id,
+        name: Relatives.name,
+        phone: Relatives.phone,
+        relation: Relatives.relation,
+      })
+      .from(Relatives)
+      .where(eq(Relatives.patientId, id));
+
+    if (relatives.length > 0) {
+      relatives.forEach((relative) => {
+        if (relative.phone) {
+          data.push({
+            id: relative.id,
+            name: relative.name,
+            phone: relative.phone,
+            isPatient: false,
+            relative: relative.relation,
+          });
+        }
+      });
+    }
 
     //si no hay numero
     // buscar y retornar los familiares
@@ -345,17 +369,10 @@ async function handlePatientInsertion<
 
   const validData = result.data;
 
-  const department = departmentsFull.find(
-    (x) => x.name === validData.municipality
-  );
-  const municipality = department?.municipalities.find(
-    (x) => x.code === validData.municipality
-  );
-
   const newAddres: addressType = {
     department: validData.department,
     nationality: validData.nationality.country,
-    municipality: municipality?.name!,
+    municipality: validData.municipality,
     address: validData.address,
   };
 

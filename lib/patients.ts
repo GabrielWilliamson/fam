@@ -32,7 +32,6 @@ export function calculateFullAge(dateOfBirth: Date): string {
   const birthDay = dateOfBirth.getDate();
 
   const currentDate = new Date();
-
   const currentYear = currentDate.getFullYear();
   const currentMonth = currentDate.getMonth();
   const currentDay = currentDate.getDate();
@@ -41,28 +40,24 @@ export function calculateFullAge(dateOfBirth: Date): string {
   let ageMonths = currentMonth - birthMonth;
   let ageDays = currentDay - birthDay;
 
-  if (ageYears > 4) {
-    return `${ageYears} años`;
-  }
-
-  if (ageMonths < 0 || (ageMonths === 0 && currentDay < birthDay)) {
+  if (ageMonths < 0 || (ageMonths === 0 && ageDays < 0)) {
     ageYears--;
     ageMonths += 12;
   }
 
   if (ageDays < 0) {
-    const lastDayOfPreviousMonth = new Date(
-      currentDate.getFullYear(),
-      currentDate.getMonth(),
-      0
-    ).getDate();
+    const lastDayOfPreviousMonth = new Date(currentYear, currentMonth, 0).getDate();
     ageMonths--;
     ageDays += lastDayOfPreviousMonth;
   }
-  const birthDate = new Date(birthYear, birthMonth, birthDay);
-  const millisecondsPerWeek = 1000 * 60 * 60 * 24 * 7;
-  const ageInWeeks = Math.floor(
-    (currentDate.getTime() - birthDate.getTime()) / millisecondsPerWeek
-  );
-  return `${ageYears} años ${ageMonths} meses ${ageDays} días (${ageInWeeks} semanas)`;
+
+  if (ageYears >= 5) {
+    return `${ageYears} años`;
+  }
+
+  if (ageYears >= 1) {
+    return `${ageYears} años ${ageMonths} meses ${ageDays} días`;
+  }
+
+  return `${ageMonths} meses ${ageDays} días`;
 }

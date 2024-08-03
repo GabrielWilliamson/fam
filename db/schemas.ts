@@ -172,6 +172,7 @@ export const Relatives = pgTable("relatives", {
   name: text("name").notNull(),
   dni: text("dni").unique(),
   relation: text("relation").notNull(),
+  nationality: text("nationality").notNull(),
   civilStatus: text("civilStatus").notNull(),
   phone: text("phone"),
   patientId: uuid("patientId")

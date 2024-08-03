@@ -30,12 +30,24 @@ export const relations = [
   "SUEGRA",
 ] as const;
 
+const country = z.object({
+  country: z.string(),
+  countryCode: z.number(),
+  flag: z.string(),
+});
+
 export const RelativeSchema = z.object({
   name: z
     .string({ required_error: "Este campo es requerido" })
     .min(10, { message: "Nombre incorrecto" })
     .max(130, { message: "Nombre incorrecto" }),
-  phone: z.string({ required_error: "Este campo es requerido" }),
+  phone: z
+    .string({ required_error: "Este campo es requerido" })
+    .max(8, {
+      message: "Teléfono incorrecto",
+    })
+    .min(8, { message: "Teléfono incorrecto" }),
+  nationality: country,
   DNI: z
     .string({ required_error: "Este campo es requerido" })
     .max(14, { message: "Cédula incorrecta" })

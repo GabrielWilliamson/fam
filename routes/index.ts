@@ -5,14 +5,17 @@ import { patientsRoute } from "./patients";
 import { locationsRoute } from "./locations";
 import { authRoute } from "./auth";
 import { datesRoute } from "./dates";
+import { queriesRoute } from "./queries";
+import { fileRoute } from "./file";
 
 export const route = {
-    drugsRoute,
-    usersRoute,
-    doctorRoute,
-    patientsRoute,
-    locationsRoute,
-    authRoute,
-    datesRoute,
-  };
-
+  drugsRoute,
+  usersRoute,
+  doctorRoute,
+  patientsRoute,
+  locationsRoute,
+  authRoute,
+  datesRoute,
+  queriesRoute,
+  fileRoute,
+};

@@ -25,17 +25,47 @@ const basePatientSchema = z.object({
 });
 
 //GENERAL
-export const patientSchema = basePatientSchema.extend({
-  phone: z.number().optional(),
-  DNI: z
-    .string({ required_error: "Este campo es requerido" })
-    .min(14, { message: "Incorrecta" })
-    .max(14, { message: "Incorrecta" }),
-});
+export const patientSchema = basePatientSchema
+  .extend({
+    phone: z.number().optional(),
+    DNI: z
+      .string({ required_error: "Este campo es requerido" })
+      .min(14, { message: "Incorrecta" })
+      .max(14, { message: "Incorrecta" }),
+  })
+  .refine(
+    (data) => {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      const birthDate = new Date(data.date);
+      birthDate.setHours(0, 0, 0, 0);
+
+      return birthDate <= today;
+    },
+    {
+      message: "La fecha de nacimiento no puede ser en el futuro",
+      path: ["date"],
+    }
+  );
 export type tPatientSchema = z.infer<typeof patientSchema>;
 
 //PEDIATRICO
-export const pediatricPatientSchema = basePatientSchema;
+export const pediatricPatientSchema = basePatientSchema.refine(
+  (data) => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const birthDate = new Date(data.date);
+    birthDate.setHours(0, 0, 0, 0);
+
+    return birthDate <= today;
+  },
+  {
+    message: "La fecha de nacimiento no puede ser en el futuro",
+    path: ["date"],
+  }
+);
 export type tPediatricPatientSchema = z.infer<typeof pediatricPatientSchema>;
 
 //SMS

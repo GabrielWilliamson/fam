@@ -7,13 +7,13 @@ import bcrypt from "bcryptjs";
 import { setCookie, deleteCookie } from "hono/cookie";
 import { Users } from "../db/schemas";
 import { type userReturning } from "../types/auth";
+import jwt from "jsonwebtoken";
+import dotenv from "dotenv";
+import { initializeLucia } from "../auth/lucia";
 
-// Importación dinámica de Lucia
-let initializeLucia: Function;
-(async () => {
-  const module = await import("../auth/lucia");
-  initializeLucia = module.initializeLucia;
-})();
+dotenv.config();
+
+
 
 export const authRoute = new Hono<{ Variables: authVariables }>()
   // Ruta de inicio de sesión
@@ -24,11 +24,22 @@ export const authRoute = new Hono<{ Variables: authVariables }>()
       where: (users, { eq }) => eq(users.email, data.email),
     });
 
-    if (!user || !user.status || !user.emailVerifiedAt) {
+    if (!user) {
       return c.json({
         success: false,
-        error: "Credenciales incorrectas o verificación de correo pendiente",
+        error: "Credenciales incorrectas",
       });
+    }
+
+    if (!user.emailVerifiedAt) {
+      return c.json({
+        success: false,
+        error: "Verificación de correo pendiente",
+      });
+    }
+
+    if (!user.status) {
+      return c.json({ success: false, error: "Acceso denegado" });
     }
 
     const passwordsMatch = await bcrypt.compare(data.password, user.password);
@@ -131,4 +142,14 @@ export const authRoute = new Hono<{ Variables: authVariables }>()
     });
 
     return c.json({ success: true, error: "" });
+  })
+
+  //auth whatsapp service
+
+  .get("/whatsapp", async (c) => {
+    const session = c.get("session");
+    if (!session) return c.json({ success: false, data: null }, 401);
+    const secretKey = process.env.JWT_SECRET!;
+    const token = jwt.sign({ data: session }, secretKey);
+    return c.json({ data: token });
   });
