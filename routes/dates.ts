@@ -4,9 +4,9 @@ import { Dates, Patients } from "../db/schemas";
 import { db } from "../db/db";
 import doctorIdentification from "../lib/doctorIdentification";
 import { dateSchema } from "../schemas/dateSchema";
-import { zValidator } from "@hono/zod-validator";
 import { and, or, lte, gte, eq } from "drizzle-orm/expressions";
-import type { CurrentDate } from "../types/dates";
+
+import moment from "moment-timezone";
 
 export const datesRoute = new Hono<{ Variables: authVariables }>()
 
@@ -40,7 +40,7 @@ export const datesRoute = new Hono<{ Variables: authVariables }>()
       };
     });
 
-    return c.json({  data: adjustedResults, success: true });
+    return c.json({ data: adjustedResults, success: true });
   })
 
   // CURRENT APPOINTMENTS
@@ -51,6 +51,8 @@ export const datesRoute = new Hono<{ Variables: authVariables }>()
 
     const doctorId = await doctorIdentification(user.id, user.role);
     if (!doctorId) return c.json({ success: false, data: [] }, 401);
+
+    //obtener la hora de nic
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -99,8 +101,6 @@ export const datesRoute = new Hono<{ Variables: authVariables }>()
     body.date = new Date(body.date);
     const result = dateSchema.safeParse(body);
     if (!result.success) return c.json({ success: false, error: result.error });
-
-    console.log(result.data);
     const { start, end, date, patient } = result.data;
 
     // Convertir la fecha de inicio
@@ -121,8 +121,13 @@ export const datesRoute = new Hono<{ Variables: authVariables }>()
     // GTE MAYOR O IGUAL QUE
     // LT MENOR QUE
     // GT MAYOR QUE
+
+    //CONVERTIR LAS FECHAS RECIBIDAS A UTC
     const refineEnd = new Date(endDate);
     refineEnd.setMinutes(refineEnd.getMinutes() - 1);
+
+    const refineEndUtc = moment.tz(refineEnd, "America/Managua");
+    const startUtc = moment.tz(startDate, "America/Managua");
 
     const existingDates = await db.query.Dates.findMany({
       where: (dates) =>
@@ -130,8 +135,8 @@ export const datesRoute = new Hono<{ Variables: authVariables }>()
           eq(dates.doctorId, doctorId),
           or(
             and(
-              lte(dates.start, refineEnd), // La cita existente empieza antes que la nueva termine
-              gte(dates.end, startDate) // La cita existente termina después que la nueva comienza
+              lte(dates.start, refineEndUtc.utc().toDate()), // La cita existente empieza antes que la nueva termine
+              gte(dates.end, startUtc.utc().toDate()) // La cita existente termina después que la nueva comienza
             )
           )
         ),
@@ -146,10 +151,15 @@ export const datesRoute = new Hono<{ Variables: authVariables }>()
     const et = new Date(endDate);
     et.setMinutes(et.getMinutes() - 1);
 
+    //DAR FORMATO UTC antes de guardar
+    const startDateUtc = moment.tz(startDate, "America/Managua");
+    const etUtc = moment.tz(et, "America/Managua");
+    console.log(etUtc.utc().toDate());
+
     try {
       await db.insert(Dates).values({
-        start: startDate,
-        end: et,
+        start: startDateUtc.utc().toDate(),
+        end: etUtc.utc().toDate(),
         doctorId: doctorId,
         patientId: patient.id,
         status: "agendada",

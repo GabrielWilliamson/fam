@@ -145,6 +145,9 @@ export const Queries = pgTable("queries", {
     .notNull()
     .references(() => Files.id),
   resources: text("resources").array(),
+  interrogation: text("interrogation"),
+  reason: text("reason"),
+  history: text("history"),
   dateId: uuid("dateId")
     .notNull()
     .references(() => Dates.id),
@@ -219,7 +222,7 @@ export const Exams = pgTable("exams", {
     .notNull()
     .references(() => Queries.id),
   signosVitales: json("signosVitales"),
-  datosAntropometricos: json("datosAntropometricos"),
+  antropometrics: json("antropometrics"),
   aspectoGeneral: text("aspectoGeneral"),
   pielYMucosa: text("pielYMucosa"),
   cabezaYCuello: text("cabezaYCuello"),

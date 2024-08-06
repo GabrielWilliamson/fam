@@ -13,7 +13,18 @@ import { eq } from "drizzle-orm";
 import type { querieType } from "../types/queries";
 import { resolve } from "bun";
 import { zValidator } from "@hono/zod-validator";
-import { vitalsSchema } from "../schemas/vitalSchema";
+import {
+  antropometricsSchema,
+  vitalsSchema,
+  type antropometrics,
+  type vitals,
+} from "../schemas/vitalSchema";
+import errorMap from "zod/locales/en.js";
+import {
+  historySchema,
+  interrogationSchema,
+  reasonSchema,
+} from "../schemas/querieSchema";
 
 // status for Dates
 // process - en proceso
@@ -88,6 +99,10 @@ export const queriesRoute = new Hono<{ Variables: authVariables }>()
         querieId: Queries.id,
       });
 
+    await db.insert(Exams).values({
+      querieId: result[0].querieId,
+    });
+
     await db
       .update(Dates)
       .set({ status: "process" })
@@ -139,7 +154,7 @@ export const queriesRoute = new Hono<{ Variables: authVariables }>()
   })
 
   //obtener el examen fisico
-  .get("/vitals", async (c) => {
+  .get("/exam", async (c) => {
     const user = c.get("user");
     if (!user)
       return c.json(
@@ -161,31 +176,286 @@ export const queriesRoute = new Hono<{ Variables: authVariables }>()
 
     const examData = await db
       .select({
-        id: Exams.id,
+        vitals: Exams.signosVitales,
+        antropometrics: Exams.antropometrics,
+      })
+      .from(Exams)
+      .where(eq(Exams.querieId, querieId));
+
+    const data = examData[0].vitals;
+    const data2 = examData[0].antropometrics;
+
+    if (data === null && data2 === null) {
+      return c.json(
+        {
+          success: true,
+          data: {
+            vitals: null,
+            antropometrics: null,
+          },
+        },
+        200
+      );
+    }
+    const result = JSON.stringify(data);
+    const vitalsData: vitals = JSON.parse(result);
+
+    const result2 = JSON.stringify(data2);
+    const antropometricsData: antropometrics = JSON.parse(result2);
+
+    return c.json(
+      {
+        success: true,
+        data: {
+          vitals: vitalsData,
+          antropometrics: antropometricsData,
+        },
+      },
+      200
+    );
+  })
+
+  //save vitals
+  .post("/vitals/:querieId", zValidator("json", vitalsSchema), async (c) => {
+    const user = c.get("user");
+    if (!user) return c.json({ success: false, error: "No autorizado" }, 401);
+    if (user.role === "ADMIN")
+      return c.json({ success: false, error: "No autorizado" }, 401);
+
+    const newData = c.req.valid("json");
+
+    const querieId = c.req.param("querieId");
+    if (!querieId)
+      return c.json({ success: false, error: "El id es requerido" }, 500);
+
+    // Obtener los datos existentes
+    const existingData = await db
+      .select({
         vitals: Exams.signosVitales,
       })
       .from(Exams)
       .where(eq(Exams.querieId, querieId));
 
-    return c.json({ success: true, data: examData[0] }, 200);
+    // Recuperar el objeto existente de signos vitales
+    const existingVitals = existingData[0]?.vitals || {};
+
+    // Combinar datos existentes con los nuevos (actualizar campos existentes y agregar nuevos)
+    const updatedVitals = {
+      ...existingVitals,
+      ...newData,
+    };
+
+    // Actualizar el registro
+    await db
+      .update(Exams)
+      .set({
+        signosVitales: updatedVitals,
+      })
+      .where(eq(Exams.querieId, querieId));
+
+    return c.json({ success: true, error: null }, 200);
   })
 
-  //save vitals
-  .post("/vitals", zValidator("json", vitalsSchema), async (c) => {
+  //save antropometricos
+  .post(
+    "/antro/:querieId",
+    zValidator("json", antropometricsSchema),
+    async (c) => {
+      const user = c.get("user");
+      if (!user) return c.json({ success: false, error: "No autorizado" }, 401);
+      if (user.role === "ADMIN")
+        return c.json({ success: false, error: "No autorizado" }, 401);
+
+      const newData = c.req.valid("json");
+
+      const querieId = c.req.param("querieId");
+      if (!querieId)
+        return c.json({ success: false, error: "El id es requerido" }, 500);
+
+      // Obtener los datos existentes
+      const existingData = await db
+        .select({
+          antropometrics: Exams.antropometrics,
+        })
+        .from(Exams)
+        .where(eq(Exams.querieId, querieId));
+
+      // Recuperar el objeto existente de antropométricos
+      const existingAntropometrics = existingData[0]?.antropometrics || {};
+
+      // Combinar datos existentes con los nuevos (actualizar campos existentes y agregar nuevos)
+      const updatedAntropometrics = {
+        ...existingAntropometrics,
+        ...newData,
+      };
+
+      // Actualizar el registro
+      await db
+        .update(Exams)
+        .set({
+          antropometrics: updatedAntropometrics,
+        })
+        .where(eq(Exams.querieId, querieId));
+
+      return c.json({ success: true, error: null }, 200);
+    }
+  )
+
+  //AUTOSAVE ENDPOINTS
+
+  //HISTORY
+  .post("/history/:querieId", zValidator("json", historySchema), async (c) => {
+    const { history } = c.req.valid("json");
+    const user = c.get("user");
+    if (!user) return c.json({ success: false, error: "No autorizado" }, 401);
+    if (user.role !== "DOCTOR")
+      return c.json({ success: false, error: "No autorizado" }, 401);
+
+    const querieId = c.req.param("querieId");
+    if (!querieId)
+      return c.json({ success: false, error: "El id es requerido" }, 500);
+
+    await db
+      .update(Queries)
+      .set({
+        history: history,
+      })
+      .where(eq(Queries.id, querieId));
+
+    return c.json({ success: true }, 200);
+  })
+  .get("/history/:querieId", async (c) => {
     const user = c.get("user");
     if (!user)
       return c.json(
         { success: false, error: "No autorizado", data: null },
         401
       );
-    if (user.role === "ADMIN")
+    if (user.role !== "DOCTOR")
       return c.json(
         { success: false, error: "No autorizado", data: null },
         401
       );
 
-    const data = c.req.valid("json");
-      
+    const querieId = c.req.param("querieId");
+    if (!querieId)
+      return c.json(
+        { success: false, error: "El id es requerido", data: null },
+        500
+      );
 
+    const findQuerie = await db
+      .select({
+        history: Queries.history,
+      })
+      .from(Queries)
+      .where(eq(Queries.id, querieId));
 
+    return c.json({ success: true, data: findQuerie[0].history }, 200);
+  })
+
+  //REASON
+  .post("/reason/:querieId", zValidator("json", reasonSchema), async (c) => {
+    const { reason } = c.req.valid("json");
+    const user = c.get("user");
+    if (!user) return c.json({ success: false, error: "No autorizado" }, 401);
+    if (user.role !== "DOCTOR")
+      return c.json({ success: false, error: "No autorizado" }, 401);
+
+    const querieId = c.req.param("querieId");
+    if (!querieId)
+      return c.json({ success: false, error: "El id es requerido" }, 500);
+
+    await db
+      .update(Queries)
+      .set({
+        reason: reason,
+      })
+      .where(eq(Queries.id, querieId));
+
+    return c.json({ success: true }, 200);
+  })
+  .get("/reason/:querieId", async (c) => {
+    const user = c.get("user");
+    if (!user)
+      return c.json(
+        { success: false, error: "No autorizado", data: null },
+        401
+      );
+    if (user.role !== "DOCTOR")
+      return c.json(
+        { success: false, error: "No autorizado", data: null },
+        401
+      );
+
+    const querieId = c.req.param("querieId");
+    if (!querieId)
+      return c.json(
+        { success: false, error: "El id es requerido", data: null },
+        500
+      );
+
+    const findQuerie = await db
+      .select({
+        reason: Queries.reason,
+      })
+      .from(Queries)
+      .where(eq(Queries.id, querieId));
+
+    return c.json({ success: true, data: findQuerie[0].reason }, 200);
+  })
+
+  //INTERROGATION
+  .post(
+    "/interrogation/:querieId",
+    zValidator("json", interrogationSchema),
+    async (c) => {
+      const { interrogation } = c.req.valid("json");
+      const user = c.get("user");
+      if (!user) return c.json({ success: false, error: "No autorizado" }, 401);
+      if (user.role !== "DOCTOR")
+        return c.json({ success: false, error: "No autorizado" }, 401);
+
+      const querieId = c.req.param("querieId");
+      if (!querieId)
+        return c.json({ success: false, error: "El id es requerido" }, 500);
+
+      await db
+        .update(Queries)
+        .set({
+          interrogation: interrogation,
+        })
+        .where(eq(Queries.id, querieId));
+
+      return c.json({ success: true }, 200);
+    }
+  )
+  .get("/interrogation/:querieId", async (c) => {
+    const user = c.get("user");
+    if (!user)
+      return c.json(
+        { success: false, error: "No autorizado", data: null },
+        401
+      );
+    if (user.role !== "DOCTOR")
+      return c.json(
+        { success: false, error: "No autorizado", data: null },
+        401
+      );
+
+    const querieId = c.req.param("querieId");
+    if (!querieId)
+      return c.json(
+        { success: false, error: "El id es requerido", data: null },
+        500
+      );
+
+    const findQuerie = await db
+      .select({
+        interrogation: Queries.interrogation,
+      })
+      .from(Queries)
+      .where(eq(Queries.id, querieId));
+
+    return c.json({ success: true, data: findQuerie[0].interrogation }, 200);
   });

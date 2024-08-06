@@ -1,0 +1,1 @@
+ALTER TABLE "queries" RENAME COLUMN "observations" TO "interrogation";

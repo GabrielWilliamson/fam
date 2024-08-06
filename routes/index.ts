@@ -7,6 +7,7 @@ import { authRoute } from "./auth";
 import { datesRoute } from "./dates";
 import { queriesRoute } from "./queries";
 import { fileRoute } from "./file";
+import { assistantRoute } from "./assistant";
 
 export const route = {
   drugsRoute,
@@ -18,4 +19,5 @@ export const route = {
   datesRoute,
   queriesRoute,
   fileRoute,
+  assistantRoute,
 };
