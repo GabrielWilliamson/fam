@@ -11,6 +11,9 @@ import { Assistants, Doctors, Users } from "../db/schemas";
 import { db } from "../db/db";
 import { eq } from "drizzle-orm";
 
+
+//REVISAR EL ACCESO DEL MEDICO 
+
 export const doctorRoute = new Hono<{ Variables: authVariables }>()
 
   //save credential

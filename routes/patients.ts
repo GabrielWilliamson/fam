@@ -8,7 +8,7 @@ import {
 } from "../schemas/patientSchema";
 import { db } from "../db/db";
 import { Patients, Files, Doctors, Users, Relatives } from "../db/schemas";
-import { and, eq, sql } from "drizzle-orm";
+import { and, eq, or, sql } from "drizzle-orm";
 import type {
   tablePatients,
   addressType,
@@ -39,6 +39,10 @@ export const patientsRoute = new Hono<{ Variables: authVariables }>()
     if (!user) return c.json({ success: false, data: [] }, 401);
     if (user.role === "ADMIN") return c.json({ success: false, data: [] }, 401);
 
+    const doctorId = await doctorIdentification(user.id, user.role);
+
+    if (!doctorId) return c.json({ success: false, data: [] }, 401);
+
     const patients = await db
       .select({
         id: Patients.id,
@@ -53,9 +57,7 @@ export const patientsRoute = new Hono<{ Variables: authVariables }>()
       })
       .from(Patients)
       .innerJoin(Files, eq(Patients.id, Files.patientId))
-      .innerJoin(Doctors, eq(Patients.doctorId, Doctors.id))
-      .innerJoin(Users, eq(Doctors.userId, Users.id))
-      .where(eq(Users.id, user.id));
+      .where(eq(Patients.doctorId, doctorId));
 
     const formattedPatients = patients.map((patient) => ({
       id: patient.id,
@@ -84,6 +86,8 @@ export const patientsRoute = new Hono<{ Variables: authVariables }>()
     if (user.role === "ADMIN") return c.json({ success: false, data: [] }, 401);
 
     const doctorId = await doctorIdentification(user.id, user.role);
+    console.log(doctorId, "aca estamos validando");
+
     if (!doctorId) return c.json({ success: false, data: [] }, 401);
 
     const query = c.req.query("q");
@@ -96,23 +100,25 @@ export const patientsRoute = new Hono<{ Variables: authVariables }>()
     let patients = await db
       .select({
         id: Patients.id,
+        doctorId: Patients.doctorId,
         name: Patients.name,
         fileId: Files.id,
         dni: Patients.dni,
       })
       .from(Patients)
-      .innerJoin(Files, eq(Patients.id, Files.patientId))
       .where(
         and(
-          sql`${Patients.name} ILIKE ${
-            "%" + normalizedQuery + "%"
-          } OR to_tsvector('simple', lower(${
-            Patients.name
-          })) @@ to_tsquery('simple', ${tsQuery})`,
-          eq(Patients.doctorId, doctorId)
+          eq(Patients.doctorId, doctorId),
+          or(
+            sql`${Patients.name} ILIKE ${"%" + normalizedQuery + "%"}`,
+            sql`to_tsvector('simple', lower(${Patients.name})) @@ to_tsquery('simple', ${tsQuery})`
+          )
         )
       )
+      .innerJoin(Files, eq(Patients.id, Files.patientId))
       .limit(10);
+
+    console.log("result", patients);
 
     return c.json({ success: true, data: patients as searchPatient[] });
   })
@@ -202,6 +208,10 @@ export const patientsRoute = new Hono<{ Variables: authVariables }>()
     if (user.role != "DOCTOR")
       return c.json({ success: false, data: null }, 401);
 
+    const doctorId = await doctorIdentification(user.id, user.role);
+    if (!doctorId)
+      return c.json({ success: false, data: null, error: "unauthorized" }, 401);
+
     const id = c.req.query("id");
     if (!id)
       return c.json({ success: false, error: "id requerido", data: null }, 500);
@@ -217,22 +227,15 @@ export const patientsRoute = new Hono<{ Variables: authVariables }>()
         dni: Patients.dni,
         createdAt: Patients.createdAt,
         idFile: Files.id,
-        userId: Doctors.userId,
       })
       .from(Patients)
-      .where(eq(Files.id, id))
-      .innerJoin(Files, eq(Patients.id, Files.patientId))
-      .innerJoin(Doctors, eq(Patients.doctorId, Doctors.id));
+      .where(and(eq(Files.id, id), eq(Patients.doctorId, doctorId)))
+      .innerJoin(Files, eq(Patients.id, Files.patientId));
 
     if (!patient)
       return c.json(
         { success: false, error: "No se encontro el paciente", data: null },
         500
-      );
-    if (patient[0].userId != user.id)
-      return c.json(
-        { success: false, error: "No autorizado", data: null },
-        401
       );
 
     const address = JSON.stringify(patient[0].address);
@@ -271,6 +274,7 @@ export const patientsRoute = new Hono<{ Variables: authVariables }>()
     let patient = await db
       .select({
         id: Patients.id,
+        doctorId: Patients.doctorId,
         name: Patients.name,
         fileId: Files.id,
         dni: Patients.dni,
@@ -286,6 +290,15 @@ export const patientsRoute = new Hono<{ Variables: authVariables }>()
         500
       );
 
+    const doctorId = await doctorIdentification(user.id, user.role);
+    if (!doctorId) return c.json({ success: false, data: null }, 401);
+
+    if (patient[0].doctorId != doctorId) {
+      return c.json(
+        { success: false, data: null, error: "No autorizado" },
+        401
+      );
+    }
     return c.json({ success: true, data: patient[0] as searchPatient });
   })
 
@@ -303,6 +316,7 @@ export const patientsRoute = new Hono<{ Variables: authVariables }>()
 
     let patient = await db
       .select({
+        doctorId: Patients.doctorId,
         id: Patients.id,
         name: Patients.name,
         phone: Patients.phone,
@@ -311,6 +325,17 @@ export const patientsRoute = new Hono<{ Variables: authVariables }>()
       .innerJoin(Files, eq(Patients.id, Files.patientId))
       .where(eq(Patients.id, id))
       .limit(1);
+
+    const doctorId = await doctorIdentification(user.id, user.role);
+
+    if (!doctorId) {
+      return c.json({ success: false, error: "No autorizado", data: [] }, 401);
+    }
+
+    //No puedes enviar sms a pacientes agenos a tu doctor
+    if (doctorId != patient[0].doctorId) {
+      return c.json({ success: false, error: "No autorizado", data: [] }, 401);
+    }
 
     let data: smsTable[] = [];
 

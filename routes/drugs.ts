@@ -7,6 +7,7 @@ import { Doctors, Drugs, Users } from "../db/schemas";
 import { db } from "../db/db";
 import { and, eq } from "drizzle-orm";
 import errorMap from "zod/locales/en.js";
+import doctorIdentification from "../lib/doctorIdentification";
 
 export const drugsRoute = new Hono<{ Variables: authVariables }>()
 
@@ -24,6 +25,14 @@ export const drugsRoute = new Hono<{ Variables: authVariables }>()
         401
       );
 
+    const doctorId = await doctorIdentification(user.id, user.role);
+
+    if (!doctorId)
+      return c.json(
+        { success: false, data: null, error: "User not found" },
+        401
+      );
+
     const drugs = await db
       .select({
         id: Drugs.id,
@@ -33,9 +42,10 @@ export const drugsRoute = new Hono<{ Variables: authVariables }>()
         presentations: Drugs.presentations,
       })
       .from(Drugs)
-      .innerJoin(Doctors, eq(Drugs.doctorId, Doctors.id))
-      .innerJoin(Users, eq(Doctors.userId, Users.id))
-      .where(eq(Doctors.userId, user.id) && eq(Drugs.status, true));
+      .where(and(eq(Drugs.doctorId, doctorId), eq(Drugs.status, true)));
+
+    console.log(drugs);
+    console.log(doctorId, "checking");
 
     const formattedDrugs = drugs.map((drug: any) => ({
       ...drug,
@@ -43,33 +53,6 @@ export const drugsRoute = new Hono<{ Variables: authVariables }>()
     }));
 
     return c.json({ success: true, data: formattedDrugs as drugsTable[] });
-  })
-
-  //select data  REVISAR SI LO NECESITO
-  .get("/options", async (c) => {
-    const user = c.get("user");
-    if (!user) return c.json({});
-    if (user.role !== "DOCTOR") return c.json({}, 401);
-
-    const drugs = await db
-      .select({
-        drugId: Drugs.id,
-        tradeName: Drugs.tradeName,
-        genericName: Drugs.genericName,
-        status: Drugs.status,
-        presentations: Drugs.presentations,
-      })
-      .from(Drugs)
-      .innerJoin(Doctors, eq(Drugs.doctorId, Doctors.id))
-      .innerJoin(Users, eq(Doctors.userId, Users.id))
-      .where(eq(Doctors.userId, user.id) && eq(Drugs.status, true));
-  })
-
-  //buscar REVISAR
-  .get("/search", (c) => {
-    const user = c.get("user");
-    if (!user) return c.body(null, 401);
-    return c.json({ hello: "esto deberia ser prohibitado" });
   })
 
   //agregar
@@ -115,14 +98,14 @@ export const drugsRoute = new Hono<{ Variables: authVariables }>()
     }
   })
 
-  //actualizar FALTA
+  //actualizar presentaciones  FALTA
   .put("/:id", zValidator("json", drugsSchema), async (c) => {
     const data = await c.req.valid("json");
     const id = c.req.param("id");
     return c.json({});
   })
 
-  //estado
+  //estado falta usar el id del doctor 
   .patch("/change/:id", async (c) => {
     const user = c.get("user");
     if (!user) return c.json({ success: false, error: "No autorizado" }, 401);

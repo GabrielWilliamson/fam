@@ -51,9 +51,7 @@ export const datesRoute = new Hono<{ Variables: authVariables }>()
 
     const doctorId = await doctorIdentification(user.id, user.role);
     if (!doctorId) return c.json({ success: false, data: [] }, 401);
-
-    //obtener la hora de nic
-
+ 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const tomorrow = new Date(today);
@@ -101,7 +99,18 @@ export const datesRoute = new Hono<{ Variables: authVariables }>()
     body.date = new Date(body.date);
     const result = dateSchema.safeParse(body);
     if (!result.success) return c.json({ success: false, error: result.error });
+
     const { start, end, date, patient } = result.data;
+
+    // validar si el paciente corresponde al medico
+    const findPatient = await db
+      .select()
+      .from(Patients)
+      .where(and(eq(Patients.id, patient.id), eq(Patients.doctorId, doctorId)));
+
+    if (findPatient.length > 0) {
+      return c.json({ success: false, error: "No autorizado" });
+    }
 
     // Convertir la fecha de inicio
     const startDate = new Date(date);
@@ -154,7 +163,6 @@ export const datesRoute = new Hono<{ Variables: authVariables }>()
     //DAR FORMATO UTC antes de guardar
     const startDateUtc = moment.tz(startDate, "America/Managua");
     const etUtc = moment.tz(et, "America/Managua");
-    console.log(etUtc.utc().toDate());
 
     try {
       await db.insert(Dates).values({
