@@ -51,7 +51,7 @@ export const datesRoute = new Hono<{ Variables: authVariables }>()
 
     const doctorId = await doctorIdentification(user.id, user.role);
     if (!doctorId) return c.json({ success: false, data: [] }, 401);
- 
+
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const tomorrow = new Date(today);
@@ -89,16 +89,18 @@ export const datesRoute = new Hono<{ Variables: authVariables }>()
   //NEW APPOINTMENT
   .post("/", async (c) => {
     const user = c.get("user");
-    if (!user) return c.json({ success: false }, 401);
-    if (user.role === "ADMIN") return c.json({ success: false }, 401);
+    if (!user) return c.json({ success: false, error: "No autorizado" }, 401);
+    if (user.role === "ADMIN")
+      return c.json({ success: false, error: "No autorizado" }, 401);
 
     const doctorId = await doctorIdentification(user.id, user.role);
-    if (!doctorId) return c.json({ success: false }, 401);
+    if (!doctorId)
+      return c.json({ success: false, error: "No autorizado" }, 401);
 
     const body = await c.req.json();
     body.date = new Date(body.date);
     const result = dateSchema.safeParse(body);
-    if (!result.success) return c.json({ success: false, error: result.error });
+    if (!result.success) return c.json({ success: false, error: "Datos erroneos" });
 
     const { start, end, date, patient } = result.data;
 
@@ -108,8 +110,8 @@ export const datesRoute = new Hono<{ Variables: authVariables }>()
       .from(Patients)
       .where(and(eq(Patients.id, patient.id), eq(Patients.doctorId, doctorId)));
 
-    if (findPatient.length > 0) {
-      return c.json({ success: false, error: "No autorizado" });
+    if (findPatient.length <= 0) {
+      return c.json({ success: false, error: "No autorizado por el medico" });
     }
 
     // Convertir la fecha de inicio
@@ -173,9 +175,9 @@ export const datesRoute = new Hono<{ Variables: authVariables }>()
         status: "agendada",
       });
 
-      return c.json({ success: true });
+      return c.json({ success: true, error: null });
     } catch (error) {
-      console.error("Error al crear la cita:", error);
+      console.error("Error al crear la cita:");
       return c.json({ success: false, error: "Error al crear la cita" });
     }
   });

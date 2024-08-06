@@ -44,9 +44,6 @@ export const drugsRoute = new Hono<{ Variables: authVariables }>()
       .from(Drugs)
       .where(and(eq(Drugs.doctorId, doctorId), eq(Drugs.status, true)));
 
-    console.log(drugs);
-    console.log(doctorId, "checking");
-
     const formattedDrugs = drugs.map((drug: any) => ({
       ...drug,
       presentations: drug.presentations || [],
@@ -90,7 +87,6 @@ export const drugsRoute = new Hono<{ Variables: authVariables }>()
         presentations: data.presentations,
       });
 
-      await setTimeout(() => {}, 500);
       return c.json({ success: true, error: "" });
     } catch (e) {
       console.log(e);
@@ -105,7 +101,7 @@ export const drugsRoute = new Hono<{ Variables: authVariables }>()
     return c.json({});
   })
 
-  //estado falta usar el id del doctor 
+  //estado falta usar el id del doctor
   .patch("/change/:id", async (c) => {
     const user = c.get("user");
     if (!user) return c.json({ success: false, error: "No autorizado" }, 401);
