@@ -9,9 +9,7 @@ import {
   Prescriptions,
   Queries,
 } from "../db/schemas";
-import { eq } from "drizzle-orm";
-import type { querieType } from "../types/queries";
-import { resolve } from "bun";
+import { eq, and } from "drizzle-orm";
 import { zValidator } from "@hono/zod-validator";
 import {
   antropometricsSchema,
@@ -19,12 +17,12 @@ import {
   type antropometrics,
   type vitals,
 } from "../schemas/vitalSchema";
-import errorMap from "zod/locales/en.js";
 import {
   historySchema,
   interrogationSchema,
   reasonSchema,
 } from "../schemas/querieSchema";
+import doctorIdentification from "../lib/doctorIdentification";
 
 // status for Dates
 // process - en proceso
@@ -53,6 +51,14 @@ export const queriesRoute = new Hono<{ Variables: authVariables }>()
         401
       );
 
+    const doctorId = await doctorIdentification(user.id, user.role);
+
+    if (!doctorId)
+      return c.json(
+        { success: false, redirect: null, error: "No autorizado" },
+        401
+      );
+
     const dateId = c.req.query("dateId");
     if (!dateId) {
       return c.json(
@@ -60,17 +66,6 @@ export const queriesRoute = new Hono<{ Variables: authVariables }>()
         500
       );
     }
-
-    const findQuerie = await db
-      .select()
-      .from(Queries)
-      .where(eq(Queries.dateId, dateId));
-
-    if (findQuerie.length > 0)
-      return c.json(
-        { success: true, redirect: findQuerie[0].id, error: null },
-        500
-      );
 
     const dateInfo = await db
       .select({
@@ -80,11 +75,22 @@ export const queriesRoute = new Hono<{ Variables: authVariables }>()
       })
       .from(Dates)
       .innerJoin(Files, eq(Files.patientId, Dates.patientId))
-      .where(eq(Dates.id, dateId));
+      .where(and(eq(Dates.id, dateId), eq(Dates.doctorId, doctorId)));
 
     if (dateInfo.length === 0)
       return c.json(
         { success: false, redirect: null, error: "No se encotro la cita" },
+        500
+      );
+
+    const findQuerie = await db
+      .select()
+      .from(Queries)
+      .where(eq(Queries.dateId, dateId));
+
+    if (findQuerie.length > 0)
+      return c.json(
+        { success: true, redirect: findQuerie[0].id, error: null },
         500
       );
 
@@ -130,6 +136,13 @@ export const queriesRoute = new Hono<{ Variables: authVariables }>()
         401
       );
 
+
+    const doctorId = await doctorIdentification(user.id, user.role);
+    if (!doctorId)  return c.json(
+      { success: false, error: "No autorizado", data: null },
+      401
+    );
+
     const querieId = c.req.query("querieId");
     if (!querieId)
       return c.json(
@@ -148,7 +161,11 @@ export const queriesRoute = new Hono<{ Variables: authVariables }>()
       })
       .from(Queries)
       .innerJoin(Files, eq(Files.id, Queries.idFile))
-      .innerJoin(Patients, eq(Patients.id, Files.patientId));
+      .innerJoin(Patients, eq(Patients.id, Files.patientId))
+      .where(and(
+        eq(Queries.id, querieId),
+        eq(Queries.doctorsId, doctorId)
+      ));
 
     return c.json({ success: true, data: QuerieData[0] }, 200);
   })

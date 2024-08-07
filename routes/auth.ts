@@ -28,6 +28,7 @@ export const authRoute = new Hono<{ Variables: authVariables }>()
       return c.json({
         success: false,
         error: "Credenciales incorrectas",
+        role: null,
       });
     }
 
@@ -35,21 +36,22 @@ export const authRoute = new Hono<{ Variables: authVariables }>()
       return c.json({
         success: false,
         error: "Verificación de correo pendiente",
+        role: null,
       });
     }
 
     if (!user.status) {
-      return c.json({ success: false, error: "Acceso denegado" });
+      return c.json({ success: false, error: "Acceso denegado", role:null });
     }
 
     const passwordsMatch = await bcrypt.compare(data.password, user.password);
 
     if (!passwordsMatch) {
-      return c.json({ success: false, error: "Credenciales incorrectas" });
+      return c.json({ success: false, error: "Credenciales incorrectas", role:null });
     }
 
     if (!initializeLucia) {
-      return c.json({ success: false, error: "Error de inicialización" });
+      return c.json({ success: false, error: "Error de inicialización", role:null });
     }
 
     const lucia = initializeLucia();
@@ -62,7 +64,7 @@ export const authRoute = new Hono<{ Variables: authVariables }>()
       sessionCookie.value,
       sessionCookie.attributes
     );
-    return c.json({ success: true, error: "" });
+    return c.json({ success: true, error: "", role: user.role });
   })
 
   // Ruta para verificar el usuario

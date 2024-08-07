@@ -86,7 +86,6 @@ export const patientsRoute = new Hono<{ Variables: authVariables }>()
     if (user.role === "ADMIN") return c.json({ success: false, data: [] }, 401);
 
     const doctorId = await doctorIdentification(user.id, user.role);
-    console.log(doctorId, "aca estamos validando");
 
     if (!doctorId) return c.json({ success: false, data: [] }, 401);
 
@@ -117,9 +116,6 @@ export const patientsRoute = new Hono<{ Variables: authVariables }>()
       )
       .innerJoin(Files, eq(Patients.id, Files.patientId))
       .limit(10);
-
-    console.log("result", patients);
-
     return c.json({ success: true, data: patients as searchPatient[] });
   })
 
@@ -259,48 +255,6 @@ export const patientsRoute = new Hono<{ Variables: authVariables }>()
 
     return c.json({ success: true, data: resultPatient });
   })
-
-  // SEARCH FOR ID PATIENT
-  // .get("/id", async (c) => {
-  //   const user = c.get("user");
-  //   if (!user) return c.json({ success: false, data: null }, 401);
-  //   if (user.role === "ADMIN")
-  //     return c.json({ success: false, data: null }, 401);
-
-  //   const id = c.req.query("id");
-  //   if (!id)
-  //     return c.json({ success: false, error: "id requerido", data: null }, 500);
-
-  //   let patient = await db
-  //     .select({
-  //       id: Patients.id,
-  //       doctorId: Patients.doctorId,
-  //       name: Patients.name,
-  //       fileId: Files.id,
-  //       dni: Patients.dni,
-  //     })
-  //     .from(Patients)
-  //     .innerJoin(Files, eq(Patients.id, Files.patientId))
-  //     .where(eq(Patients.id, id))
-  //     .limit(1);
-
-  //   if (!patient)
-  //     return c.json(
-  //       { success: false, error: "No se encontro el paciente", data: null },
-  //       500
-  //     );
-
-  //   const doctorId = await doctorIdentification(user.id, user.role);
-  //   if (!doctorId) return c.json({ success: false, data: null }, 401);
-
-  //   if (patient[0].doctorId != doctorId) {
-  //     return c.json(
-  //       { success: false, data: null, error: "No autorizado" },
-  //       401
-  //     );
-  //   }
-  //   return c.json({ success: true, data: patient[0] as searchPatient });
-  // })
 
   //SEARCH FOR SEND SMS
   .get("/sms", async (c) => {
