@@ -324,11 +324,6 @@ export const patientsRoute = new Hono<{ Variables: authVariables }>()
         }
       });
     }
-
-    //si no hay numero
-    // buscar y retornar los familiares
-    // ademas mostrar si hay consultas a futuro para recordarle
-
     if (!patient)
       return c.json(
         { success: false, error: "No se encontro el paciente", data: [] },
@@ -336,6 +331,42 @@ export const patientsRoute = new Hono<{ Variables: authVariables }>()
       );
 
     return c.json({ success: true, data: data });
+  })
+
+  //SEARCH FOR PATIENT
+  .get("/id", async (c) => {
+    const user = c.get("user");
+    if (!user) return c.json({ success: false, data: null }, 401);
+    if (user.role === "ADMIN")
+      return c.json({ success: false, data: null }, 401);
+
+    const id = c.req.query("id");
+    if (!id)
+      return c.json({ success: false, error: "id requerido", data: null }, 500);
+
+    const doctorId = await doctorIdentification(user.id, user.role);
+    if (!doctorId)
+      return c.json({ success: false, data: null, error: "unauthorized" }, 401);
+
+    let patient = await db
+      .select({
+        id: Patients.id,
+        name: Patients.name,
+        fileId: Files.id,
+        dni: Patients.dni,
+      })
+      .from(Patients)
+      .innerJoin(Files, eq(Patients.id, Files.patientId))
+      .where(and(eq(Patients.id, id), eq(Patients.doctorId, doctorId)))
+      .limit(1);
+
+    if (!patient)
+      return c.json(
+        { success: false, error: "No se encontro el paciente", data: null },
+        500
+      );
+
+    return c.json({ success: true, data: patient[0] as searchPatient });
   });
 
 async function handlePatientInsertion<
