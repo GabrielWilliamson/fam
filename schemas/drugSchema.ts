@@ -1,7 +1,11 @@
 import z from "zod";
 
 export const drugsSchema = z.object({
-  genericName: z.string().min(4, { message: "Mínimo 4 caracteres" }).optional(),
+  genericName: z
+    .string()
+    .min(4, { message: "Mínimo 4 caracteres" })
+    .optional()
+    .nullable(),
   tradeName: z
     .string({ required_error: "Este campo es requerido" })
     .min(4, { message: "Mínimo 4 caracteres" }),

@@ -9,7 +9,7 @@ export const detailSchema = z.object({
     .string({ required_error: "Este campo es requerido" })
     .min(1, { message: "Error" }),
   genericName: z.string().optional(),
-  id: z.string().optional(),
+  drugId: z.string(),
 });
 
 export const prescriptionDetailSchema = z.object({

@@ -1,5 +1,3 @@
-
-
 export type headType = {
   craneo: string | undefined;
   ojos: string | undefined;
@@ -16,20 +14,23 @@ export type torazType = {
   pulmonares: string | undefined;
 };
 
-export type querieType = {
-  id: string;
-  idFile: string;
-  examId: string | null;
-  currentHistory: string | null;
-  emergency: boolean;  
+//autosave
+export type querieBase = {
+  querieId: string;
+  interrogation: string | null;
+  reason: string | null;
+  history: string | null;
   observations: string | null;
-  diagnosis: string | null;
-  price: number | null;
-  paymentStatus: boolean;
-  prescriptionsId: string | null;
-  createdAt: string;
-  doctorsId: string;
-  name: string;
+  diag: string | null;
+  //exam data
+  aspects: string | null;
+  skin: string | null;
+  abd: string | null;
+  exInf: string | null;
+  exSup: string | null;
+  anus: string | null;
+  genitu: string | null;
+  neuro: string | null;
 };
 
 export type resource = {

@@ -1,1 +1,0 @@
-ALTER TABLE "queries" ADD COLUMN "history" text;

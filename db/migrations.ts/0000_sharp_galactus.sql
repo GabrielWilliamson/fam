@@ -39,7 +39,7 @@ CREATE TABLE IF NOT EXISTS "doctors" (
 --> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "drugs" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-	"name" text NOT NULL,
+	"tradeName" text NOT NULL,
 	"genericName" text,
 	"status" boolean DEFAULT true,
 	"presentations" text[],
@@ -50,17 +50,18 @@ CREATE TABLE IF NOT EXISTS "drugs" (
 CREATE TABLE IF NOT EXISTS "exams" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"querieId" uuid NOT NULL,
-	"signosVitales" json,
-	"datosAntropometricos" json,
-	"aspectoGeneral" text,
-	"pielYMucosa" text,
-	"cabezaYCuello" text,
+	"vitals" json,
+	"antropometrics" json,
+	"aspects" text,
+	"skin" text,
+	"head" text,
 	"torax" text,
-	"abdomenYPelvis" text,
-	"ano" text,
-	"musculoes" text,
-	"genitourinario" text,
+	"abd" text,
+	"anus" text,
+	"genitu" text,
 	"neuro" text,
+	"exInf" text,
+	"exSup" text,
 	"createdAt" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
@@ -93,7 +94,7 @@ CREATE TABLE IF NOT EXISTS "prescriptions" (
 CREATE TABLE IF NOT EXISTS "prescriptionsDetails" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"prescriptionId" uuid NOT NULL,
-	"Indications" text NOT NULL,
+	"indications" text NOT NULL,
 	"drugId" uuid NOT NULL,
 	"presentations" text NOT NULL,
 	"createdAt" timestamp DEFAULT now() NOT NULL
@@ -103,6 +104,11 @@ CREATE TABLE IF NOT EXISTS "queries" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"idFile" text NOT NULL,
 	"resources" text[],
+	"interrogation" text,
+	"reason" text,
+	"history" text,
+	"observations" text,
+	"diag" text,
 	"dateId" uuid NOT NULL,
 	"price" numeric,
 	"emergency" boolean DEFAULT false,

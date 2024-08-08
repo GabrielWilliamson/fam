@@ -23,6 +23,8 @@ import {
   reasonSchema,
 } from "../schemas/querieSchema";
 import doctorIdentification from "../lib/doctorIdentification";
+import { genSalt } from "bcryptjs";
+import type { querieBase } from "../types/queries";
 
 // status for Dates
 // process - en proceso
@@ -136,12 +138,12 @@ export const queriesRoute = new Hono<{ Variables: authVariables }>()
         401
       );
 
-
     const doctorId = await doctorIdentification(user.id, user.role);
-    if (!doctorId)  return c.json(
-      { success: false, error: "No autorizado", data: null },
-      401
-    );
+    if (!doctorId)
+      return c.json(
+        { success: false, error: "No autorizado", data: null },
+        401
+      );
 
     const querieId = c.req.query("querieId");
     if (!querieId)
@@ -162,12 +164,61 @@ export const queriesRoute = new Hono<{ Variables: authVariables }>()
       .from(Queries)
       .innerJoin(Files, eq(Files.id, Queries.idFile))
       .innerJoin(Patients, eq(Patients.id, Files.patientId))
-      .where(and(
-        eq(Queries.id, querieId),
-        eq(Queries.doctorsId, doctorId)
-      ));
+      .where(and(eq(Queries.id, querieId), eq(Queries.doctorsId, doctorId)));
 
     return c.json({ success: true, data: QuerieData[0] }, 200);
+  })
+
+  //Obtener la consulta base para los (autosave)
+  .get("/base", async (c) => {
+    const user = c.get("user");
+    if (!user)
+      return c.json(
+        { success: false, error: "No autorizado", data: null },
+        401
+      );
+    if (user.role === "ADMIN")
+      return c.json(
+        { success: false, error: "No autorizado", data: null },
+        401
+      );
+
+    const doctorId = await doctorIdentification(user.id, user.role);
+    if (!doctorId)
+      return c.json(
+        { success: false, error: "No autorizado", data: null },
+        401
+      );
+
+    const querieId = c.req.query("querieId");
+    if (!querieId)
+      return c.json(
+        { success: false, error: "El id es requerido", data: null },
+        500
+      );
+
+    const QuerieData = await db
+      .select({
+        querieId: Queries.id,
+        interrogation: Queries.interrogation,
+        reason: Queries.reason,
+        history: Queries.history,
+        observations: Queries.observations,
+        diag: Queries.diag,
+        aspects: Exams.aspects,
+        skin: Exams.skin,
+        abd: Exams.abd,
+        exInf: Exams.exInf,
+        exSup: Exams.exSup,
+        anus: Exams.anus,
+        genitu: Exams.genitu,
+        neuro: Exams.neuro,
+      })
+      .from(Queries)
+      .innerJoin(Exams, eq(Exams.querieId, Queries.id))
+      .where(and(eq(Queries.id, querieId), eq(Queries.doctorsId, doctorId)));
+
+    return c.json({ success: true, data: QuerieData[0] as querieBase }, 200);
   })
 
   //obtener el examen fisico
@@ -193,7 +244,7 @@ export const queriesRoute = new Hono<{ Variables: authVariables }>()
 
     const examData = await db
       .select({
-        vitals: Exams.signosVitales,
+        vitals: Exams.vitals,
         antropometrics: Exams.antropometrics,
       })
       .from(Exams)
@@ -248,7 +299,7 @@ export const queriesRoute = new Hono<{ Variables: authVariables }>()
     // Obtener los datos existentes
     const existingData = await db
       .select({
-        vitals: Exams.signosVitales,
+        vitals: Exams.vitals,
       })
       .from(Exams)
       .where(eq(Exams.querieId, querieId));
@@ -266,7 +317,7 @@ export const queriesRoute = new Hono<{ Variables: authVariables }>()
     await db
       .update(Exams)
       .set({
-        signosVitales: updatedVitals,
+        vitals: updatedVitals,
       })
       .where(eq(Exams.querieId, querieId));
 
@@ -319,7 +370,6 @@ export const queriesRoute = new Hono<{ Variables: authVariables }>()
   )
 
   //AUTOSAVE ENDPOINTS
-
   //HISTORY
   .post("/history/:querieId", zValidator("json", historySchema), async (c) => {
     const { history } = c.req.valid("json");
@@ -341,36 +391,6 @@ export const queriesRoute = new Hono<{ Variables: authVariables }>()
 
     return c.json({ success: true }, 200);
   })
-  .get("/history/:querieId", async (c) => {
-    const user = c.get("user");
-    if (!user)
-      return c.json(
-        { success: false, error: "No autorizado", data: null },
-        401
-      );
-    if (user.role !== "DOCTOR")
-      return c.json(
-        { success: false, error: "No autorizado", data: null },
-        401
-      );
-
-    const querieId = c.req.param("querieId");
-    if (!querieId)
-      return c.json(
-        { success: false, error: "El id es requerido", data: null },
-        500
-      );
-
-    const findQuerie = await db
-      .select({
-        history: Queries.history,
-      })
-      .from(Queries)
-      .where(eq(Queries.id, querieId));
-
-    return c.json({ success: true, data: findQuerie[0].history }, 200);
-  })
-
   //REASON
   .post("/reason/:querieId", zValidator("json", reasonSchema), async (c) => {
     const { reason } = c.req.valid("json");
@@ -392,36 +412,6 @@ export const queriesRoute = new Hono<{ Variables: authVariables }>()
 
     return c.json({ success: true }, 200);
   })
-  .get("/reason/:querieId", async (c) => {
-    const user = c.get("user");
-    if (!user)
-      return c.json(
-        { success: false, error: "No autorizado", data: null },
-        401
-      );
-    if (user.role !== "DOCTOR")
-      return c.json(
-        { success: false, error: "No autorizado", data: null },
-        401
-      );
-
-    const querieId = c.req.param("querieId");
-    if (!querieId)
-      return c.json(
-        { success: false, error: "El id es requerido", data: null },
-        500
-      );
-
-    const findQuerie = await db
-      .select({
-        reason: Queries.reason,
-      })
-      .from(Queries)
-      .where(eq(Queries.id, querieId));
-
-    return c.json({ success: true, data: findQuerie[0].reason }, 200);
-  })
-
   //INTERROGATION
   .post(
     "/interrogation/:querieId",
@@ -446,33 +436,4 @@ export const queriesRoute = new Hono<{ Variables: authVariables }>()
 
       return c.json({ success: true }, 200);
     }
-  )
-  .get("/interrogation/:querieId", async (c) => {
-    const user = c.get("user");
-    if (!user)
-      return c.json(
-        { success: false, error: "No autorizado", data: null },
-        401
-      );
-    if (user.role !== "DOCTOR")
-      return c.json(
-        { success: false, error: "No autorizado", data: null },
-        401
-      );
-
-    const querieId = c.req.param("querieId");
-    if (!querieId)
-      return c.json(
-        { success: false, error: "El id es requerido", data: null },
-        500
-      );
-
-    const findQuerie = await db
-      .select({
-        interrogation: Queries.interrogation,
-      })
-      .from(Queries)
-      .where(eq(Queries.id, querieId));
-
-    return c.json({ success: true, data: findQuerie[0].interrogation }, 200);
-  });
+  );

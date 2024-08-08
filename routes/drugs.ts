@@ -5,9 +5,10 @@ import type { authVariables } from "../types/auth";
 import type { drugsTable } from "../types/drugs";
 import { Doctors, Drugs, Users } from "../db/schemas";
 import { db } from "../db/db";
-import { and, eq } from "drizzle-orm";
+import { and, eq, or, sql } from "drizzle-orm";
 import errorMap from "zod/locales/en.js";
 import doctorIdentification from "../lib/doctorIdentification";
+import type { drugSearch } from "../types/drugs";
 
 export const drugsRoute = new Hono<{ Variables: authVariables }>()
 
@@ -52,12 +53,90 @@ export const drugsRoute = new Hono<{ Variables: authVariables }>()
     return c.json({ success: true, data: formattedDrugs as drugsTable[] });
   })
 
+  .get("/search", async (c) => {
+    const user = c.get("user");
+    if (!user)
+      return c.json(
+        { success: false, data: null, error: "User not found" },
+        401
+      );
+    if (user.role !== "DOCTOR")
+      return c.json(
+        { success: false, data: null, error: "User not found" },
+        401
+      );
+
+    const doctorId = await doctorIdentification(user.id, user.role);
+
+    if (!doctorId)
+      return c.json(
+        { success: false, data: null, error: "User not found" },
+        401
+      );
+
+    const q = c.req.query("q");
+    if (!q)
+      return c.json(
+        { success: false, error: "query not found", data: null },
+        500
+      );
+
+    const termArray = q.trim().split(/\s+/);
+    const term = termArray
+      .filter(Boolean)
+      .map((word) => `${word}:*`)
+      .join(" & ");
+
+    if (!term) {
+      return c.json(
+        { success: false, error: "query not found", data: null },
+        500
+      );
+    }
+
+    const result = await db
+      .select({
+        id: Drugs.id,
+        tradeName: Drugs.tradeName,
+        genericName: Drugs.genericName,
+        presentations: Drugs.presentations,
+      })
+      .from(Drugs)
+      .where(
+        and(
+          eq(Drugs.doctorId, doctorId),
+          eq(Drugs.status, true),
+          or(
+            sql`to_tsvector('english', ${Drugs.tradeName}) @@ to_tsquery('english', ${term})`
+          )
+        )
+      );
+
+    const x: drugSearch[] = result.map((item) => {
+      return {
+        drugId: item.id,
+        tradeName: item.tradeName,
+        genericName: item.genericName,
+        presentations: item.presentations!,
+      };
+    });
+
+    return c.json({ success: true, data: x });
+  })
+
   //agregar
   .post("/", zValidator("json", drugsSchema), async (c) => {
     const user = c.get("user");
-    if (!user) return c.json({ success: false, error: "No autorizado" }, 401);
+    if (!user)
+      return c.json(
+        { success: false, error: "No autorizado", result: null },
+        401
+      );
     if (user.role !== "DOCTOR")
-      return c.json({ success: false, error: "No autorizado" }, 401);
+      return c.json(
+        { success: false, error: "No autorizado", result: null },
+        401
+      );
 
     const data = c.req.valid("json");
 
@@ -73,24 +152,38 @@ export const drugsRoute = new Hono<{ Variables: authVariables }>()
         .from(Drugs)
         .where(
           and(
-            eq(Drugs.tradeName, data.tradeName),
+            eq(Drugs.tradeName, data.tradeName.toLowerCase()),
             eq(Drugs.doctorId, doctor[0].id)
           )
         );
       if (find.length > 0)
-        return c.json({ success: false, error: "El fármaco ya existe" }, 500);
+        return c.json(
+          { success: false, error: "El fármaco ya existe", result: null },
+          500
+        );
 
-      await db.insert(Drugs).values({
-        genericName: data.genericName?.toLowerCase(),
-        tradeName: data.tradeName.toLowerCase(),
-        doctorId: doctor[0].id,
-        presentations: data.presentations,
-      });
+      const result = await db
+        .insert(Drugs)
+        .values({
+          genericName: data.genericName?.toLowerCase(),
+          tradeName: data.tradeName.toLowerCase(),
+          doctorId: doctor[0].id,
+          presentations: data.presentations,
+        })
+        .returning({
+          id: Drugs.id,
+          tradeName: Drugs.tradeName,
+          genericName: Drugs.genericName,
+          presentations: Drugs.presentations,
+        });
 
-      return c.json({ success: true, error: "" });
+      return c.json({ success: true, error: "", result: result[0] }, 200);
     } catch (e) {
       console.log(e);
-      return c.json({ success: false, error: "Ocurrio un error" }, 500);
+      return c.json(
+        { success: false, error: "Ocurrio un error", result: null },
+        500
+      );
     }
   })
 

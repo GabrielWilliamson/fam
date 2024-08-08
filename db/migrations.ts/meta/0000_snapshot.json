@@ -1,5 +1,5 @@
 {
-  "id": "1cdcb338-5eb1-4b48-82b0-1881803dc87f",
+  "id": "a90e43f2-da3d-4031-9b7a-4c2d72541e73",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -218,8 +218,8 @@
           "notNull": true,
           "default": "gen_random_uuid()"
         },
-        "name": {
-          "name": "name",
+        "tradeName": {
+          "name": "tradeName",
           "type": "text",
           "primaryKey": false,
           "notNull": true
@@ -293,32 +293,32 @@
           "primaryKey": false,
           "notNull": true
         },
-        "signosVitales": {
-          "name": "signosVitales",
+        "vitals": {
+          "name": "vitals",
           "type": "json",
           "primaryKey": false,
           "notNull": false
         },
-        "datosAntropometricos": {
-          "name": "datosAntropometricos",
+        "antropometrics": {
+          "name": "antropometrics",
           "type": "json",
           "primaryKey": false,
           "notNull": false
         },
-        "aspectoGeneral": {
-          "name": "aspectoGeneral",
+        "aspects": {
+          "name": "aspects",
           "type": "text",
           "primaryKey": false,
           "notNull": false
         },
-        "pielYMucosa": {
-          "name": "pielYMucosa",
+        "skin": {
+          "name": "skin",
           "type": "text",
           "primaryKey": false,
           "notNull": false
         },
-        "cabezaYCuello": {
-          "name": "cabezaYCuello",
+        "head": {
+          "name": "head",
           "type": "text",
           "primaryKey": false,
           "notNull": false
@@ -329,32 +329,38 @@
           "primaryKey": false,
           "notNull": false
         },
-        "abdomenYPelvis": {
-          "name": "abdomenYPelvis",
+        "abd": {
+          "name": "abd",
           "type": "text",
           "primaryKey": false,
           "notNull": false
         },
-        "ano": {
-          "name": "ano",
+        "anus": {
+          "name": "anus",
           "type": "text",
           "primaryKey": false,
           "notNull": false
         },
-        "musculoes": {
-          "name": "musculoes",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "genitourinario": {
-          "name": "genitourinario",
+        "genitu": {
+          "name": "genitu",
           "type": "text",
           "primaryKey": false,
           "notNull": false
         },
         "neuro": {
           "name": "neuro",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "exInf": {
+          "name": "exInf",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "exSup": {
+          "name": "exSup",
           "type": "text",
           "primaryKey": false,
           "notNull": false
@@ -585,8 +591,8 @@
           "primaryKey": false,
           "notNull": true
         },
-        "Indications": {
-          "name": "Indications",
+        "indications": {
+          "name": "indications",
           "type": "text",
           "primaryKey": false,
           "notNull": true
@@ -663,6 +669,36 @@
         "resources": {
           "name": "resources",
           "type": "text[]",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "interrogation": {
+          "name": "interrogation",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "reason": {
+          "name": "reason",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "history": {
+          "name": "history",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "observations": {
+          "name": "observations",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "diag": {
+          "name": "diag",
+          "type": "text",
           "primaryKey": false,
           "notNull": false
         },

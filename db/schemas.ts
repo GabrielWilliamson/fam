@@ -7,7 +7,6 @@ import {
   json,
   pgEnum,
   pgTable,
-  serial,
   text,
   timestamp,
   uuid,
@@ -119,11 +118,7 @@ export const Dates = pgTable("dates", {
   createdAt: timestamp("createdAt").notNull().defaultNow(),
 });
 export const DateRelations = relations(Dates, ({ many, one }) => ({
-  patient: one(Patients, {
-    fields: [Dates.patientId],
-    references: [Patients.id],
-  }),
-  queries: many(Queries),
+  patient: one(Patients),
 }));
 export const Files = pgTable("files", {
   id: text("id").primaryKey(),
@@ -148,6 +143,8 @@ export const Queries = pgTable("queries", {
   interrogation: text("interrogation"),
   reason: text("reason"),
   history: text("history"),
+  observations: text("observations"),
+  diag: text("diag"),
   dateId: uuid("dateId")
     .notNull()
     .references(() => Dates.id),
@@ -198,7 +195,7 @@ export const PrescriptionsDetails = pgTable("prescriptionsDetails", {
   prescriptionId: uuid("prescriptionId")
     .notNull()
     .references(() => Prescriptions.id),
-  indications: text("Indications").notNull(),
+  indications: text("indications").notNull(),
   drugId: uuid("drugId")
     .notNull()
     .references(() => Drugs.id),
@@ -207,7 +204,7 @@ export const PrescriptionsDetails = pgTable("prescriptionsDetails", {
 });
 export const Drugs = pgTable("drugs", {
   id: uuid("id").primaryKey().defaultRandom(),
-  tradeName: text("name").notNull(),
+  tradeName: text("tradeName").notNull(),
   genericName: text("genericName"),
   status: boolean("status").default(true),
   presentations: text("presentations").array(),
@@ -221,16 +218,17 @@ export const Exams = pgTable("exams", {
   querieId: uuid("querieId")
     .notNull()
     .references(() => Queries.id),
-  signosVitales: json("signosVitales"),
+  vitals: json("vitals"),
   antropometrics: json("antropometrics"),
-  aspectoGeneral: text("aspectoGeneral"),
-  pielYMucosa: text("pielYMucosa"),
-  cabezaYCuello: text("cabezaYCuello"),
+  aspects: text("aspects"),
+  skin: text("skin"),
+  head: text("head"),
   torax: text("torax"),
-  abdomenYPelvis: text("abdomenYPelvis"),
-  ano: text("ano"),
-  musculoesqueletico: text("musculoes"),
-  genitourinario: text("genitourinario"),
+  abd: text("abd"),
+  anus: text("anus"),
+  genitu: text("genitu"),
   neuro: text("neuro"),
+  exInf: text("exInf"),
+  exSup: text("exSup"),
   createdAt: timestamp("createdAt").notNull().defaultNow(),
 });
