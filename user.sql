@@ -18,8 +18,7 @@ VALUES (
         'ADMIN',
         '2024-02-10 22:47:14.056'
     )
-
--- Insert the first doctor and user
+    -- Insert the first doctor and user
 INSERT INTO
     public."users" (
         "name",
@@ -87,4 +86,71 @@ VALUES (
                 "email" = 'doctor3@gmail.com'
         ),
         'GENERAL'
+    );
+
+--Insert Assistant in users table
+INSERT INTO
+    public."users" (
+        "name",
+        "password",
+        "email",
+        "emailVerifiedAt",
+        "image",
+        "role",
+        "updatedAt"
+    )
+VALUES (
+        'Assistant 1',
+        '$2b$10$7ZBKOOXU8jy4UaUt6SZUzuBoIaTpr/g/MNkZiKrdS61xbKLiqj6rO',
+        'assistant1@gmail.com',
+        '2024-02-10 22:47:14.056',
+        NULL,
+        'ASSISTANT',
+        '2024-02-10 22:47:14.056'
+    ),
+    (
+        'Assistant 2',
+        '$2b$10$7ZBKOOXU8jy4UaUt6SZUzuBoIaTpr/g/MNkZiKrdS61xbKLiqj6rO',
+        'assistant2@gmail.com',
+        '2024-02-10 22:47:14.056',
+        NULL,
+        'ASSISTANT',
+        '2024-02-10 22:47:14.056'
+    ),
+    (
+        'Assistant 3',
+        '$2b$10$7ZBKOOXU8jy4UaUt6SZUzuBoIaTpr/g/MNkZiKrdS61xbKLiqj6rO',
+        'assistant3@gmail.com',
+        '2024-02-10 22:47:14.056',
+        NULL,
+        'ASSISTANT',
+        '2024-02-10 22:47:14.056'
+    );
+
+INSERT INTO
+    assistants ("userId")
+    
+VALUES (
+        (
+            SELECT "id"
+            FROM public."users"
+            WHERE
+                "email" = 'assistant1@gmail.com'
+        )
+    ),
+    (
+        (
+            SELECT "id"
+            FROM public."users"
+            WHERE
+                "email" = 'assistant2@gmail.com'
+        )
+    ),
+    (
+        (
+            SELECT "id"
+            FROM public."users"
+            WHERE
+                "email" = 'assistant3@gmail.com'
+        )
     );

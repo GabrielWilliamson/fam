@@ -2,17 +2,16 @@ import { Hono } from "hono";
 import type { authVariables } from "../types/auth";
 import { zValidator } from "@hono/zod-validator";
 import {
-  addAssitantShema,
+  addAssitantSchema,
   credentialSchema,
   skillsSchema,
   specialiteSchema,
 } from "../schemas/doctorSchema";
 import { Assistants, Doctors, Users } from "../db/schemas";
 import { db } from "../db/db";
-import { eq } from "drizzle-orm";
+import { eq, isNull } from "drizzle-orm";
 
-
-//REVISAR EL ACCESO DEL MEDICO 
+//REVISAR EL ACCESO DEL MEDICO
 
 export const doctorRoute = new Hono<{ Variables: authVariables }>()
 
@@ -62,20 +61,26 @@ export const doctorRoute = new Hono<{ Variables: authVariables }>()
   .get("/info", async (c) => {
     const user = c.get("user");
 
-    type response = {
-      credential: string | null;
-      skils: {} | null;
-      error?: string;
-    };
-
-    const r: response = {
-      credential: null,
-      skils: null,
-      error: "No autenticado",
-    };
-
-    if (!user) return c.json(r, 401);
-    if (user.role !== "DOCTOR") return c.json(r, 401);
+    if (!user)
+      return c.json(
+        {
+          credential: null,
+          skils: null,
+          error: "No autenticado",
+          assistantName: null,
+        },
+        401
+      );
+    if (user.role !== "DOCTOR")
+      return c.json(
+        {
+          credential: null,
+          skils: null,
+          error: "No autenticado",
+          assistantName: null,
+        },
+        401
+      );
 
     const info = await db.query.Doctors.findFirst({
       where: eq(Doctors.userId, user.id),
@@ -85,12 +90,20 @@ export const doctorRoute = new Hono<{ Variables: authVariables }>()
       },
     });
 
-    const data: response = {
+    const assistant = await db
+      .select({
+        assistantName: Users.name,
+      })
+      .from(Assistants)
+      .innerJoin(Doctors, eq(Assistants.id, Doctors.assistantId))
+      .innerJoin(Users, eq(Assistants.userId, Users.id))
+      .where(eq(Doctors.userId, user.id));
+
+    return c.json({
       credential: info?.credential || null,
       skils: info?.skils || null,
-    };
-
-    return c.json(data);
+      assistantName: assistant[0]?.assistantName || null,
+    });
   })
 
   //save skils
@@ -152,10 +165,11 @@ export const doctorRoute = new Hono<{ Variables: authVariables }>()
   })
 
   //save my assistant
-  .post("/assistant", zValidator("json", addAssitantShema), async (c) => {
+  .patch("/assistant", zValidator("json", addAssitantSchema), async (c) => {
     const user = c.get("user");
-    if (!user) return c.body(null, 401);
-    if (user.role !== "DOCTOR") return c.body(null, 401);
+    if (!user) return c.json({ success: false, error: "No autenticado" }, 401);
+    if (user.role !== "DOCTOR")
+      return c.json({ success: false, error: "No autorizado" }, 401);
 
     const data = c.req.valid("json");
 
@@ -184,20 +198,40 @@ export const doctorRoute = new Hono<{ Variables: authVariables }>()
   })
 
   //get my assistant
-  .get("/assistant", async (c) => {
-    const user = c.get("user");
-    if (!user) return c.body(null, 401);
-    if (user.role !== "DOCTOR") return c.body(null, 401);
+  // .get("/assistant", async (c) => {
+  //   const user = c.get("user");
+  //   if (!user) return c.body(null, 401);
+  //   if (user.role !== "DOCTOR") return c.body(null, 401);
 
+  //   const assistants = await db
+  //     .select({
+  //       assistantId: Assistants.id,
+  //       assistantName: Users.name,
+  //     })
+  //     .from(Assistants)
+  //     .innerJoin(Doctors, eq(Assistants.id, Doctors.assistantId))
+  //     .innerJoin(Users, eq(Assistants.userId, Users.id))
+  //     .where(eq(Doctors.userId, user.id));
+
+  //   return c.json(assistants);
+  // })
+
+  .get("/list", async (c) => {
+    const user = c.get("user");
+    if (!user) return c.json({ success: false, data: null }, 401);
+    if (user.role !== "DOCTOR")
+      return c.json({ success: false, data: null }, 401);
+
+    // List assistants not assigned to any doctor
     const assistants = await db
       .select({
         assistantId: Assistants.id,
         assistantName: Users.name,
       })
       .from(Assistants)
-      .innerJoin(Doctors, eq(Assistants.id, Doctors.assistantId))
+      .leftJoin(Doctors, eq(Assistants.id, Doctors.assistantId))
       .innerJoin(Users, eq(Assistants.userId, Users.id))
-      .where(eq(Doctors.userId, user.id));
+      .where(isNull(Doctors.assistantId));
 
-    return c.json(assistants);
+    return c.json({ success: true, data: assistants }, 200);
   });

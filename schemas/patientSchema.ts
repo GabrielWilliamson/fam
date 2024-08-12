@@ -29,9 +29,7 @@ export const patientSchema = basePatientSchema
   .extend({
     phone: z.number().optional(),
     DNI: z
-      .string({ required_error: "Este campo es requerido" })
-      .min(14, { message: "Incorrecta" })
-      .max(14, { message: "Incorrecta" }),
+      .string({ required_error: "Este campo es requerido" })      
   })
   .refine(
     (data) => {

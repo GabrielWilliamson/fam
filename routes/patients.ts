@@ -24,6 +24,7 @@ import {
 } from "../lib/patients";
 import doctorIdentification from "../lib/doctorIdentification";
 import type { z } from "zod";
+import { departmentsFull } from "../lib/locations";
 
 type ApiResponse<T = {}> = {
   success: boolean;
@@ -379,10 +380,25 @@ async function handlePatientInsertion<
 
   const validData = result.data;
 
+  let muny = "";
+
+  if (validData.nationality.countryCode === 505) {
+    const department = departmentsFull.find(
+      (dep) => dep.name === validData.department
+    );
+
+    const municipality = department?.municipalities.find(
+      (municipality) => municipality.code === validData.municipality
+    );
+    muny = municipality?.name!;
+  } else {
+    muny = validData.municipality;
+  }
+
   const newAddres: addressType = {
     department: validData.department,
     nationality: validData.nationality.country,
-    municipality: validData.municipality,
+    municipality: muny,
     address: validData.address,
   };
 

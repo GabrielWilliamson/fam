@@ -15,7 +15,7 @@ export const specialiteSchema = z.object({
   }),
 });
 
-export const addAssitantShema = z.object({
+export const addAssitantSchema = z.object({
   assistantId: z.string({ required_error: "Seleccione un asistente" }),
 });
 

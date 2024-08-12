@@ -7,8 +7,9 @@ import { authRoute } from "./auth";
 import { datesRoute } from "./dates";
 import { queriesRoute } from "./queries";
 import { fileRoute } from "./file";
-import { assistantRoute } from "./assistant";
 import { prescriptionsRoute } from "./prescriptions";
+import { mediaRoute } from "./media";
+import { servicesRoute } from "./services";
 
 export const route = {
   drugsRoute,
@@ -20,6 +21,7 @@ export const route = {
   datesRoute,
   queriesRoute,
   fileRoute,
-  assistantRoute,
-  prescriptionsRoute
+  mediaRoute,
+  prescriptionsRoute,
+  servicesRoute
 };

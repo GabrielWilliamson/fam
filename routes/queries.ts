@@ -18,6 +18,7 @@ import {
   type vitals,
 } from "../schemas/vitalSchema";
 import {
+  autoSchema,
   historySchema,
   interrogationSchema,
   reasonSchema,
@@ -369,7 +370,49 @@ export const queriesRoute = new Hono<{ Variables: authVariables }>()
     }
   )
 
-  //AUTOSAVE ENDPOINTS
+  //posibles casos:
+
+  //history
+  //reason
+  //interrogation
+
+  // .patch("/auto/:querieId/", zValidator("json", autoSchema), async (c) => {
+  //   const user = c.get("user");
+
+  //   if (!user) return c.json({ success: false, error: "No autorizado" }, 401);
+  //   if (user.role !== "DOCTOR")
+  //     return c.json({ success: false, error: "No autorizado" }, 401);
+
+  //   const doctorId = await doctorIdentification(user.id, user.role);
+  //   if (!doctorId) {
+  //     return c.json({ success: false, error: "No autorizado" }, 500);
+  //   }
+
+  //   const querieId = c.req.param("querieId");
+  //   if (!querieId)
+  //     return c.json({ success: false, error: "El id es requerido" }, 500);
+
+  //   const queryFind = await db
+  //     .select()
+  //     .from(Queries)
+  //     .where(eq(Queries.id, querieId));
+
+  //   if (queryFind.length === 0)
+  //     return c.json({ success: false, error: "No existe la consulta" }, 500);
+  //   const query = queryFind[0];
+
+  //   if (query.doctorsId !== doctorId) {
+  //     return c.json({ success: false, error: "No autorizado" }, 401);
+  //   }
+
+  //   const { data, autoType } = c.req.valid("json");
+  //   const auto = {
+  //     autoType: data,
+  //   };
+
+  //   await db.update(Queries).set({ auto }).where(eq(Queries.id, querieId));
+  // })
+
   //HISTORY
   .post("/history/:querieId", zValidator("json", historySchema), async (c) => {
     const { history } = c.req.valid("json");

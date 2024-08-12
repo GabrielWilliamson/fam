@@ -188,10 +188,47 @@ export const drugsRoute = new Hono<{ Variables: authVariables }>()
   })
 
   //actualizar presentaciones  FALTA
-  .put("/:id", zValidator("json", drugsSchema), async (c) => {
-    const data = await c.req.valid("json");
+  .patch("/:id", zValidator("json", drugsSchema), async (c) => {
+    const user = c.get("user");
+    if (!user)
+      return c.json(
+        { success: false, error: "No autorizado", result: null },
+        401
+      );
+    if (user.role !== "DOCTOR")
+      return c.json(
+        { success: false, error: "No autorizado", result: null },
+        401
+      );
+
     const id = c.req.param("id");
-    return c.json({});
+    if (!id) return c.json({ success: false, error: "No id provided" }, 500);
+
+    const doctorId = await doctorIdentification(user.id, user.role);
+    if (!doctorId) {
+      return c.json({ success: false, error: "No autorizado" }, 401);
+    }
+
+    const data = c.req.valid("json");
+
+    //buscar ese medicament
+    const drug = await db.select().from(Drugs).where(eq(Drugs.id, id));
+
+    if (drug.length === 0)
+      return c.json({ success: false, error: "No se encontro" }, 500);
+
+    if (drug[0].doctorId !== doctorId)
+      return c.json({ success: false, error: "No autorizado" }, 401);
+
+    await db
+      .update(Drugs)
+      .set({
+        presentations: data.presentations,
+        genericName: data.genericName?.toLowerCase(),
+      })
+      .where(eq(Drugs.id, id));
+
+    return c.json({ success: true, error: null });
   })
 
   //estado falta usar el id del doctor

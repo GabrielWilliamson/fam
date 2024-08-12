@@ -1,9 +1,9 @@
 import type { authVariables } from "../types/auth";
 import { Hono } from "hono";
-import type { option } from "../types/controls";
 import { countries } from "../lib/countries";
 import { departmentsFull } from "../lib/locations";
 
+//autenticar esto
 export const locationsRoute = new Hono<{ Variables: authVariables }>()
 
   .get("/countries", async (c) => {
@@ -29,4 +29,32 @@ export const locationsRoute = new Hono<{ Variables: authVariables }>()
 
     const municipalities = foundDepartment.municipalities;
     return c.json(municipalities || []);
+  })
+
+  .get("/find/:code", async (c) => {
+    const code = c.req.param("code");
+
+    if (code === null || code === undefined)
+      return c.json({
+        department: null,
+        municipality: null,
+      });
+
+    for (const department of departmentsFull) {
+      const foundMunicipality = department.municipalities.find(
+        (municipality) => municipality.code === code
+      );
+
+      if (foundMunicipality) {
+        return c.json({
+          department: department.name,
+          municipality: foundMunicipality,
+        });
+      }
+    }
+
+    return c.json({
+      department: null,
+      municipality: null,
+    });
   });

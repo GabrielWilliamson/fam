@@ -120,4 +120,10 @@ export const departmentsFull: fulldepartments[] = [
       { name: "San José de Cusmapa", code: "329" },
     ],
   },
+  {
+    name: "Matagalpa",
+    municipalities: [
+      { name: "Matagalpa", code: "441" },
+    ]
+  }
 ];

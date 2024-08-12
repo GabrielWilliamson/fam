@@ -2,8 +2,7 @@ import { relations } from "drizzle-orm";
 
 import {
   boolean,
-  decimal,
-  integer,
+  doublePrecision,
   json,
   pgEnum,
   pgTable,
@@ -73,6 +72,7 @@ export const Assistants = pgTable("assistants", {
   userId: uuid("userId")
     .notNull()
     .references(() => Users.id),
+  amount: doublePrecision("amount").notNull().default(0),
 });
 export const AssistantRelations = relations(Assistants, ({ many, one }) => ({
   user: one(Users, { fields: [Assistants.id], references: [Users.id] }),
@@ -90,7 +90,6 @@ export const Patients = pgTable("patients", {
     .references(() => Doctors.id),
   date: timestamp("date").notNull(),
   createdAt: timestamp("createdAt").notNull().defaultNow(),
-  updatedAt: timestamp("updatedAt").notNull().defaultNow(),
 });
 export const PatientRelations = relations(Patients, ({ many, one }) => ({
   queries: many(Queries),
@@ -148,13 +147,12 @@ export const Queries = pgTable("queries", {
   dateId: uuid("dateId")
     .notNull()
     .references(() => Dates.id),
-  price: decimal("price"),
+  price: doublePrecision("price").default(0),
   emergency: boolean("emergency").default(false),
   doctorsId: uuid("doctorsId")
     .notNull()
     .references(() => Doctors.id),
-  createdAt: timestamp("createdAt").notNull().defaultNow(),
-  updatedAt: timestamp("updatedAt").notNull().defaultNow(),
+  createdAt: timestamp("createdAt").notNull().defaultNow()  
 });
 export const QueriesRelations = relations(Queries, ({ one }) => ({
   date: one(Dates, { fields: [Queries.dateId], references: [Dates.id] }),
