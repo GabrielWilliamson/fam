@@ -33,7 +33,7 @@ export const doctorRoute = new Hono<{ Variables: authVariables }>()
       return c.json({ success: true });
     } catch (e) {
       console.log(e);
-      return c.json({ success: false, error: "Ocurrio un error" }, 500);
+      return c.json({ success: false, error: "Ocurrió un error" }, 500);
     }
   })
 
@@ -53,7 +53,7 @@ export const doctorRoute = new Hono<{ Variables: authVariables }>()
         .where(eq(Doctors.userId, user.id));
       return c.json({ success: true });
     } catch (e) {
-      return c.json({ success: false, error: "Ocurrio un error" }, 500);
+      return c.json({ success: false, error: "Ocurrió un error" }, 500);
     }
   })
 
@@ -124,7 +124,7 @@ export const doctorRoute = new Hono<{ Variables: authVariables }>()
       return c.json({ success: true });
     } catch (e) {
       console.log(e);
-      return c.json({ success: false, error: "Ocurrio un error" }, 500);
+      return c.json({ success: false, error: "Ocurrió un error" }, 500);
     }
   })
 
@@ -193,7 +193,7 @@ export const doctorRoute = new Hono<{ Variables: authVariables }>()
       return c.json({ success: true });
     } catch (e) {
       console.log(e);
-      return c.json({ success: false, error: "Ocurrio un error" }, 500);
+      return c.json({ success: false, error: "Ocurrió un error" }, 500);
     }
   })
 

@@ -90,7 +90,7 @@ export const usersRoute = new Hono<{ Variables: authVariables }>()
         return c.json({
           success: false,
           error:
-            "Ocurrio un error al enviar el email, solicite ayuda al administrador",
+            "Ocurrió un error al enviar el email, solicite ayuda al administrador",
         });
       }
 
@@ -153,7 +153,7 @@ export const usersRoute = new Hono<{ Variables: authVariables }>()
       return c.json({ success: true, error: "" });
     } catch (e) {
       console.log(e);
-      return c.json({ success: false, error: "Ocurrio un error" });
+      return c.json({ success: false, error: "Ocurrió un error" });
     }
   })
 
@@ -189,7 +189,7 @@ export const usersRoute = new Hono<{ Variables: authVariables }>()
       return c.json({
         success: false,
         error:
-          "Ocurrio un error al enviar el email, solicite ayuda al administrador",
+          "Ocurrió un error al enviar el email, solicite ayuda al administrador",
       });
     }
     return c.json({ success: true });

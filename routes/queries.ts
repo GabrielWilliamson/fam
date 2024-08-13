@@ -370,113 +370,118 @@ export const queriesRoute = new Hono<{ Variables: authVariables }>()
     }
   )
 
-  //posibles casos:
-
-  //history
-  //reason
-  //interrogation
-
-  // .patch("/auto/:querieId/", zValidator("json", autoSchema), async (c) => {
-  //   const user = c.get("user");
-
-  //   if (!user) return c.json({ success: false, error: "No autorizado" }, 401);
-  //   if (user.role !== "DOCTOR")
-  //     return c.json({ success: false, error: "No autorizado" }, 401);
-
-  //   const doctorId = await doctorIdentification(user.id, user.role);
-  //   if (!doctorId) {
-  //     return c.json({ success: false, error: "No autorizado" }, 500);
-  //   }
-
-  //   const querieId = c.req.param("querieId");
-  //   if (!querieId)
-  //     return c.json({ success: false, error: "El id es requerido" }, 500);
-
-  //   const queryFind = await db
-  //     .select()
-  //     .from(Queries)
-  //     .where(eq(Queries.id, querieId));
-
-  //   if (queryFind.length === 0)
-  //     return c.json({ success: false, error: "No existe la consulta" }, 500);
-  //   const query = queryFind[0];
-
-  //   if (query.doctorsId !== doctorId) {
-  //     return c.json({ success: false, error: "No autorizado" }, 401);
-  //   }
-
-  //   const { data, autoType } = c.req.valid("json");
-  //   const auto = {
-  //     autoType: data,
-  //   };
-
-  //   await db.update(Queries).set({ auto }).where(eq(Queries.id, querieId));
-  // })
-
-  //HISTORY
-  .post("/history/:querieId", zValidator("json", historySchema), async (c) => {
-    const { history } = c.req.valid("json");
+  //auto save inputs
+  .patch("/auto/:querieId", zValidator("json", autoSchema), async (c) => {
     const user = c.get("user");
+
     if (!user) return c.json({ success: false, error: "No autorizado" }, 401);
     if (user.role !== "DOCTOR")
       return c.json({ success: false, error: "No autorizado" }, 401);
+
+    const doctorId = await doctorIdentification(user.id, user.role);
+    if (!doctorId) {
+      return c.json({ success: false, error: "No autorizado" }, 500);
+    }
 
     const querieId = c.req.param("querieId");
     if (!querieId)
       return c.json({ success: false, error: "El id es requerido" }, 500);
 
-    await db
-      .update(Queries)
-      .set({
-        history: history,
-      })
+    const queryFind = await db
+      .select()
+      .from(Queries)
       .where(eq(Queries.id, querieId));
 
-    return c.json({ success: true }, 200);
-  })
-  //REASON
-  .post("/reason/:querieId", zValidator("json", reasonSchema), async (c) => {
-    const { reason } = c.req.valid("json");
-    const user = c.get("user");
-    if (!user) return c.json({ success: false, error: "No autorizado" }, 401);
-    if (user.role !== "DOCTOR")
+    if (queryFind.length === 0)
+      return c.json({ success: false, error: "No existe la consulta" }, 500);
+    const query = queryFind[0];
+
+    if (query.doctorsId !== doctorId) {
       return c.json({ success: false, error: "No autorizado" }, 401);
+    }
 
-    const querieId = c.req.param("querieId");
-    if (!querieId)
-      return c.json({ success: false, error: "El id es requerido" }, 500);
+    const { data, autoType } = c.req.valid("json");
 
-    await db
-      .update(Queries)
-      .set({
-        reason: reason,
-      })
-      .where(eq(Queries.id, querieId));
-
-    return c.json({ success: true }, 200);
-  })
-  //INTERROGATION
-  .post(
-    "/interrogation/:querieId",
-    zValidator("json", interrogationSchema),
-    async (c) => {
-      const { interrogation } = c.req.valid("json");
-      const user = c.get("user");
-      if (!user) return c.json({ success: false, error: "No autorizado" }, 401);
-      if (user.role !== "DOCTOR")
-        return c.json({ success: false, error: "No autorizado" }, 401);
-
-      const querieId = c.req.param("querieId");
-      if (!querieId)
-        return c.json({ success: false, error: "El id es requerido" }, 500);
-
+    if (autoType === "history") {
       await db
         .update(Queries)
-        .set({
-          interrogation: interrogation,
-        })
+        .set({ history: data })
         .where(eq(Queries.id, querieId));
-
-      return c.json({ success: true }, 200);
     }
-  );
+    if (autoType === "obs") {
+      await db
+        .update(Queries)
+        .set({ observations: data })
+        .where(eq(Queries.id, querieId));
+    }
+    if (autoType === "reason") {
+      await db
+        .update(Queries)
+        .set({ reason: data })
+        .where(eq(Queries.id, querieId));
+    }
+    if (autoType === "interrogation") {
+      await db
+        .update(Queries)
+        .set({ interrogation: data })
+        .where(eq(Queries.id, querieId));
+    }
+    if (autoType === "diag") {
+      await db
+        .update(Queries)
+        .set({ diag: data })
+        .where(eq(Queries.id, querieId));
+    }
+
+    if (autoType === "abd") {
+      await db
+        .update(Exams)
+        .set({ abd: data })
+        .where(eq(Exams.querieId, querieId));
+    }
+
+    if (autoType === "anus") {
+      await db
+        .update(Exams)
+        .set({ anus: data })
+        .where(eq(Exams.querieId, querieId));
+    }
+    if (autoType === "aspects") {
+      await db
+        .update(Exams)
+        .set({ anus: data })
+        .where(eq(Exams.querieId, querieId));
+    }
+    if (autoType === "exInf") {
+      await db
+        .update(Exams)
+        .set({ exInf: data })
+        .where(eq(Exams.querieId, querieId));
+    }
+    if (autoType === "exSup") {
+      await db
+        .update(Exams)
+        .set({ exSup: data })
+        .where(eq(Exams.querieId, querieId));
+    }
+    if (autoType === "gen") {
+      await db
+        .update(Exams)
+        .set({ genitu: data })
+        .where(eq(Exams.querieId, querieId));
+    }
+    if (autoType === "neu") {
+      await db
+        .update(Exams)
+        .set({ neuro: data })
+        .where(eq(Exams.querieId, querieId));
+    }
+    if (autoType === "skin") {
+      await db
+        .update(Exams)
+        .set({ skin: data })
+        .where(eq(Exams.querieId, querieId));
+    }
+
+    return c.json({ success: true, error: null }, 200);
+  });

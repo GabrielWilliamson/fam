@@ -18,15 +18,22 @@ export const interrogationSchema = z.object({
 
 export type interrogation = z.infer<typeof interrogationSchema>;
 
-
-
-
-
-
-
-
 export const autoSchema = z.object({
   data: z.string().max(700, { message: "Máximo 700 caracteres" }),
-  autoType : z.enum(["history", "interrogation", "reason"])
+  autoType: z.enum([
+    "history",
+    "interrogation",
+    "reason",
+    "abd",
+    "anus",
+    "aspects",
+    "diag",
+    "exInf",
+    "exSup",
+    "gen",
+    "neu",
+    "obs",
+    "skin"
+  ]),
 });
 export type auto = z.infer<typeof autoSchema>;

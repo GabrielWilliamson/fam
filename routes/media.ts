@@ -31,10 +31,8 @@ export const s3 = new S3Client({
   },
 });
 
-// Crear una nueva instancia de Hono con seguridad de tipos para tus variables
 export const mediaRoute = new Hono<{ Variables: authVariables }>()
 
-  //Save Files to Queries
   .post("/resources/:queryId", async (c) => {
     const user = c.get("user");
     if (!user) return c.json({ error: "No se encontro el usuario" }, 401);
@@ -116,7 +114,7 @@ export const mediaRoute = new Hono<{ Variables: authVariables }>()
     if (list.length < 0) return c.json({ resources: [] }, 200);
 
     const current = await getResources(list);
-    console.log(current);
+    // console.log(current);
     return c.json({ resources: current }, 200);
   });
 

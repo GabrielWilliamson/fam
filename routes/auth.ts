@@ -128,14 +128,14 @@ export const authRoute = new Hono<{ Variables: authVariables }>()
       where: (users, { eq }) => eq(users.email, data.email),
     });
 
-    if (!user) return c.json({ error: "Ocurrio un error", success: false });
+    if (!user) return c.json({ error: "Ocurrió un error", success: false });
     if (user.emailVerifToken === null)
       return c.json({
         error: "Tu email ya ha sido verificado",
         success: false,
       });
     if (data.token !== user.emailVerifToken) {
-      return c.json({ error: "Ocurrio un error", success: false });
+      return c.json({ error: "Ocurrió un error", success: false });
     }
 
     await db.update(Users).set({

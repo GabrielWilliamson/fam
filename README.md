@@ -1,14 +1,12 @@
 - que la cedula sea opcional para los padres 
 
 
-
 - enviar notificaciones al whatsapp cada vez que un paciente llega a 
   esperar no necesariamente un paciente
 
 
-
-
 - con cuanta anticipacion como maximo se puede agendar una cita, con cuanta anticipacion como minimo minimo 6 meses 
+
 
 
 - como prefiere las busquedas de paciente para agregar una cita, con cedula o con # expediente

@@ -124,6 +124,8 @@ export const Files = pgTable("files", {
   patientId: uuid("patientId")
     .notNull()
     .references(() => Patients.id),
+  infecto: text("infecto").array(),
+  hereditary: text("hereditary").array(),
   createdAt: timestamp("createdAt").notNull().defaultNow(),
 });
 export const FileRelations = relations(Files, ({ many, one }) => ({
@@ -152,7 +154,7 @@ export const Queries = pgTable("queries", {
   doctorsId: uuid("doctorsId")
     .notNull()
     .references(() => Doctors.id),
-  createdAt: timestamp("createdAt").notNull().defaultNow()  
+  createdAt: timestamp("createdAt").notNull().defaultNow(),
 });
 export const QueriesRelations = relations(Queries, ({ one }) => ({
   date: one(Dates, { fields: [Queries.dateId], references: [Dates.id] }),

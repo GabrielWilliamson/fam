@@ -181,7 +181,7 @@ export const drugsRoute = new Hono<{ Variables: authVariables }>()
     } catch (e) {
       console.log(e);
       return c.json(
-        { success: false, error: "Ocurrio un error", result: null },
+        { success: false, error: "Ocurrió un error", result: null },
         500
       );
     }
@@ -249,6 +249,6 @@ export const drugsRoute = new Hono<{ Variables: authVariables }>()
       return c.json({ success: true });
     } catch (e) {
       console.log(e);
-      return c.json({ success: false, error: "Ocurrio un error" }, 500);
+      return c.json({ success: false, error: "Ocurrió un error" }, 500);
     }
   });
