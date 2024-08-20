@@ -8,8 +8,8 @@ export const userSchema = z.object({
 
   password: z
     .string({ required_error: "Este campo es requerido" })
-    .min(6, { message: "La clave debe de contener almenos 6 caracteres" })
-    .max(12, { message: "La clave debe de tener 12 caracteres como maximo" }),
+    .min(6, { message: "La clave debe de contener al menos 6 caracteres" })
+    .max(12, { message: "La clave debe de tener 12 caracteres como máximo" }),
 
   email: z.string({ required_error: "Este campo es requerido" })
   .email({ message: "Ingrese un Email valido" }),

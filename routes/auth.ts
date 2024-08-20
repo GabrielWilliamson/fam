@@ -1,19 +1,26 @@
 import { Hono } from "hono";
 import { zValidator } from "@hono/zod-validator";
 import type { authVariables } from "../types/auth";
-import { loginSchema, verifySchema } from "../schemas/authSchema";
+import {
+  loginSchema,
+  resetSchema,
+  sendEmailForgotSchema,
+  verifySchema,
+} from "../schemas/authSchema";
 import { db } from "../db/db";
 import bcrypt from "bcryptjs";
 import { setCookie, deleteCookie } from "hono/cookie";
-import { Users } from "../db/schemas";
+import { Assistants, Doctors, Users } from "../db/schemas";
 import { type userReturning } from "../types/auth";
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
 import { initializeLucia } from "../auth/lucia";
+import { eq } from "drizzle-orm";
+import hashPassword, { generateEmailVerificationToken } from "../lib/hash";
+import { sendForgotEmail } from "../lib/email";
+import { sparsevec } from "drizzle-orm/pg-core";
 
 dotenv.config();
-
-
 
 export const authRoute = new Hono<{ Variables: authVariables }>()
   // Ruta de inicio de sesión
@@ -41,17 +48,25 @@ export const authRoute = new Hono<{ Variables: authVariables }>()
     }
 
     if (!user.status) {
-      return c.json({ success: false, error: "Acceso denegado", role:null });
+      return c.json({ success: false, error: "Acceso denegado", role: null });
     }
 
     const passwordsMatch = await bcrypt.compare(data.password, user.password);
 
     if (!passwordsMatch) {
-      return c.json({ success: false, error: "Credenciales incorrectas", role:null });
+      return c.json({
+        success: false,
+        error: "Credenciales incorrectas",
+        role: null,
+      });
     }
 
     if (!initializeLucia) {
-      return c.json({ success: false, error: "Error de inicialización", role:null });
+      return c.json({
+        success: false,
+        error: "Error de inicialización",
+        role: null,
+      });
     }
 
     const lucia = initializeLucia();
@@ -72,37 +87,87 @@ export const authRoute = new Hono<{ Variables: authVariables }>()
     const user = c.get("user");
     if (!user) return c.json({ success: false }, 401);
 
-    const userFind = await db.query.Users.findFirst({
-      where: (users, { eq }) => eq(users.id, user.id),
-      with: {
+    //buscar como user normal
+    const findUser = await db
+      .select({
+        id: Users.id,
+        role: Users.role,
+        name: Users.name,
+        email: Users.email,
+      })
+      .from(Users)
+      .where(eq(Users.id, user.id));
+
+    if (findUser.length <= 0) return c.json({ success: false }, 401);
+
+    const userFind = findUser[0];
+    //admin
+    if (findUser[0].role === "ADMIN") {
+      const data: userReturning = {
+        id: userFind.id,
+        name: userFind.name,
+        email: userFind.email,
+        role: userFind.role,
+        doctor: null,
+        assistant: null,
+      };
+      return c.json({ success: true, data });
+    }
+
+    //doctor
+    if (findUser[0].role === "DOCTOR") {
+      const doctor = await db
+        .select({ id: Doctors.id, specialtie: Doctors.specialtie })
+        .from(Doctors)
+        .where(eq(Doctors.userId, userFind.id));
+
+      const data: userReturning = {
+        id: userFind.id,
+        name: userFind.name,
+        email: userFind.email,
+        role: userFind.role,
         doctor: {
-          columns: {
-            specialtie: true,
-            id: true,
-          },
+          id: doctor[0].id,
+          specialtie: doctor[0].specialtie,
         },
+        assistant: null,
+      };
+      return c.json({ success: true, data });
+    }
+
+    //asissant
+    if (findUser[0].role === "ASSISTANT") {
+      const assistantInfo = await db
+        .select({
+          id: Assistants.id,
+        })
+        .from(Assistants)
+        .where(eq(Assistants.userId, userFind.id));
+
+      if (assistantInfo.length <= 0) return c.json({ success: false }, 401);
+
+      const doctor = await db
+        .select({
+          specialite: Doctors.specialtie,
+        })
+        .from(Doctors)
+        .where(eq(Doctors.assistantId, assistantInfo[0].id));
+
+      if (doctor.length <= 0) return c.json({ success: false }, 401);
+
+      const data: userReturning = {
+        id: userFind.id,
+        name: userFind.name,
+        email: userFind.email,
+        role: userFind.role,
+        doctor: null,
         assistant: {
-          columns: {
-            id: true,
-          },
+          id: assistantInfo[0].id,
+          specialtie: doctor[0].specialite,
         },
-      },
-    });
-
-    if (!userFind) return c.json({ success: false }, 401);
-
-    const data: userReturning = {
-      id: userFind.id,
-      name: userFind.name,
-      email: userFind.email,
-      role: userFind.role,
-      doctor: userFind.doctor
-        ? { id: userFind.doctor.id, specialtie: userFind.doctor.specialtie }
-        : null,
-      assistant: userFind.assistant ? { id: userFind.assistant.id } : null,
-    };
-
-    return c.json({ success: true, data });
+      };
+      return c.json({ success: true, data });
+    }
   })
 
   // Ruta para cerrar sesión
@@ -138,16 +203,93 @@ export const authRoute = new Hono<{ Variables: authVariables }>()
       return c.json({ error: "Ocurrió un error", success: false });
     }
 
-    await db.update(Users).set({
-      emailVerifiedAt: new Date(),
-      emailVerifToken: null,
-    });
+    await db
+      .update(Users)
+      .set({
+        emailVerifiedAt: new Date(),
+        emailVerifToken: null,
+      })
+      .where(eq(Users.id, user.id));
 
     return c.json({ success: true, error: "" });
   })
 
-  //auth whatsapp service
+  //forgot passsword
+  .post(
+    "/sendEmailForgot",
+    zValidator("json", sendEmailForgotSchema),
+    async (c) => {
+      const data = c.req.valid("json");
+      const findUser = await db
+        .select({
+          id: Users.id,
+          email: Users.email,
+        })
+        .from(Users)
+        .where(eq(Users.email, data.email));
 
+      if (findUser.length <= 0) {
+        return c.json({ error: "No se encontro el correo", success: false });
+      }
+
+      const verificationToken = generateEmailVerificationToken();
+
+      //actualizar el token en la bd
+      await db
+        .update(Users)
+        .set({
+          email: data.email,
+          emailVerifiedAt: null,
+          emailVerifToken: verificationToken,
+        })
+        .where(eq(Users.id, findUser[0].id));
+
+      //enviar el email
+      try {
+        await sendForgotEmail(data.email, verificationToken);
+      } catch (e) {
+        return c.json({
+          success: false,
+          error:
+            "Ocurrió un error al enviar el email, solicite ayuda al administrador",
+        });
+      }
+
+      return c.json({ success: true, error: "" });
+    }
+  )
+  .patch("/reset", zValidator("json", resetSchema), async (c) => {
+    const data = c.req.valid("json");
+
+    const user = await db.query.Users.findFirst({
+      where: (users, { eq }) => eq(users.email, data.email),
+    });
+
+    if (!user) return c.json({ error: "No autorizado", success: false });
+
+    if (user.emailVerifToken === null)
+      return c.json({
+        error: "No autorizado",
+        success: false,
+      });
+    if (data.token !== user.emailVerifToken) {
+      return c.json({ error: "No autorizado", success: false });
+    }
+
+    const hashed = await hashPassword(data.newPassword);
+
+    await db
+      .update(Users)
+      .set({
+        emailVerifiedAt: new Date(),
+        password: hashed,
+        emailVerifToken: null,
+      })
+      .where(eq(Users.id, user.id));
+    return c.json({ success: true, error: "" });
+  })
+
+  //auth whatsapp serviceP
   .get("/whatsapp", async (c) => {
     const session = c.get("session");
     if (!session) return c.json({ success: false, data: null }, 401);

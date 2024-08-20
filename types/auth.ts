@@ -10,6 +10,7 @@ export type doctor = {
 };
 export type assistant = {
   id: string;
+  specialtie: string;
 };
 export type userReturning = {
   id: string;

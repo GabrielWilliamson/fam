@@ -6,7 +6,8 @@ const country = z.object({
   flag: z.string(),
 });
 
-const basePatientSchema = z.object({
+// PEDIATRICOS
+export const pediatricSchema = z.object({
   name: z
     .string({ required_error: "Este campo es requerido" })
     .min(10, { message: "Ingrese un nombre válido" })
@@ -17,54 +18,86 @@ const basePatientSchema = z.object({
   nationality: country,
   department: z.string({ required_error: "Este campo es requerido" }),
   municipality: z.string({ required_error: "Este campo es requerido" }),
-  date: z.date(),
   address: z
     .string({ required_error: "Este campo es requerido" })
-    .min(10, { message: "La dirección debe de tener almenos 10 caracteres" }),
+    .min(10, { message: "La dirección debe de tener al menos 10 caracteres" }),
   action: z.enum(["now", "date"]).nullable(),
-});
-
-//GENERAL
-export const patientSchema = basePatientSchema
-  .extend({
-    phone: z.number().optional(),
-    DNI: z
-      .string({ required_error: "Este campo es requerido" })      
-  })
-  .refine(
-    (data) => {
+  date: z.date().refine(
+    (date) => {
       const today = new Date();
-      today.setHours(0, 0, 0, 0);
+      const birthDate = new Date(date);
 
-      const birthDate = new Date(data.date);
+      // Set hours to 0 for accurate comparison
+      today.setHours(0, 0, 0, 0);
       birthDate.setHours(0, 0, 0, 0);
 
-      return birthDate <= today;
+      // Calculate the age
+      const age = today.getFullYear() - birthDate.getFullYear();
+      const monthDifference = today.getMonth() - birthDate.getMonth();
+      const dayDifference = today.getDate() - birthDate.getDate();
+
+      // Adjust age if the birthdate hasn't occurred yet this year
+      const isBirthdayPassed =
+        monthDifference > 0 || (monthDifference === 0 && dayDifference >= 0);
+      const adjustedAge = isBirthdayPassed ? age : age - 1;
+
+      return birthDate <= today && adjustedAge <= 18;
     },
     {
-      message: "La fecha de nacimiento no puede ser en el futuro",
-      path: ["date"],
+      message:
+        "La fecha de nacimiento debe indicar que el paciente tiene 18 años o menos",
     }
-  );
-export type tPatientSchema = z.infer<typeof patientSchema>;
+  ),
+});
 
-//PEDIATRICO
-export const pediatricPatientSchema = basePatientSchema.refine(
-  (data) => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+export type tPediatricSchema = z.infer<typeof pediatricSchema>;
 
-    const birthDate = new Date(data.date);
-    birthDate.setHours(0, 0, 0, 0);
-
-    return birthDate <= today;
-  },
-  {
-    message: "La fecha de nacimiento no puede ser en el futuro",
-    path: ["date"],
-  }
-);
-export type tPediatricPatientSchema = z.infer<typeof pediatricPatientSchema>;
+//GENERAL
+export const generalSchema = z.object({
+  name: z
+    .string({ required_error: "Este campo es requerido" })
+    .min(10, { message: "Ingrese un nombre válido" })
+    .max(130, { message: "Nombre incorrecto" }),
+  sex: z.enum(["MASCULINO", "FEMENINO"], {
+    required_error: "Este campo es requerido",
+  }),
+  nationality: country,
+  department: z.string({ required_error: "Este campo es requerido" }),
+  municipality: z.string({ required_error: "Este campo es requerido" }),
+  address: z
+    .string({ required_error: "Este campo es requerido" })
+    .min(10, { message: "La dirección debe de tener al menos 10 caracteres" }),
+  action: z.enum(["now", "date"]).nullable(),
+  date: z.date({ required_error: "Este campo es requerido" }).refine(
+    (date) => {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const minimumDate = new Date(today);
+      minimumDate.setFullYear(today.getFullYear() - 16);
+      return date <= minimumDate;
+    },
+    {
+      message: "Debe tener al menos 16 años",
+    }
+  ),
+  phone: z
+    .string()
+    .min(8, { message: "El número debe de tener al menos 8 caracteres" })
+    .max(8, { message: "El número debe de tener 8 caracteres como máximo" })
+    .optional()
+    .nullable(),
+  Dni: z
+    .string()
+    .length(16, "Complete la Cédula")
+    .refine((value) => /^[A-Za-z]$/.test(value[value.length - 1]), {
+      message: "El último carácter debe ser una letra",
+    })
+    .optional()
+    .nullable(),
+  foreign: z.string().optional().nullable(),
+  dateDni: z.date().optional().nullable(),
+});
+export type tgeneralSchema = z.infer<typeof generalSchema>;
 
 //SMS
 export const smsSchema = z.object({

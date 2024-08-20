@@ -5,36 +5,15 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1723150735463,
-      "tag": "0000_sharp_galactus",
+      "when": 1723649734878,
+      "tag": "0000_empty_dagger",
       "breakpoints": true
     },
     {
       "idx": 1,
       "version": "7",
-      "when": 1723459608837,
-      "tag": "0001_unusual_screwball",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1723460072170,
-      "tag": "0002_powerful_mordo",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "7",
-      "when": 1723460252397,
-      "tag": "0003_little_night_thrasher",
-      "breakpoints": true
-    },
-    {
-      "idx": 4,
-      "version": "7",
-      "when": 1723550122995,
-      "tag": "0004_old_dark_phoenix",
+      "when": 1724069730859,
+      "tag": "0001_equal_lester",
       "breakpoints": true
     }
   ]

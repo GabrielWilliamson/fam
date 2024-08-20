@@ -19,6 +19,9 @@ VALUES (
         '2024-02-10 22:47:14.056'
     )
     -- Insert the first doctor and user
+
+
+
 INSERT INTO
     public."users" (
         "name",

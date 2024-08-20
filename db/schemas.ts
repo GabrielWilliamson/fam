@@ -126,6 +126,7 @@ export const Files = pgTable("files", {
     .references(() => Patients.id),
   infecto: text("infecto").array(),
   hereditary: text("hereditary").array(),
+  app: json("app"),
   createdAt: timestamp("createdAt").notNull().defaultNow(),
 });
 export const FileRelations = relations(Files, ({ many, one }) => ({

@@ -7,10 +7,10 @@ import { changeSchema, userSchema } from "../schemas/usersSchema";
 import hashPassword from "../lib/hash";
 import { sendVerificationEmail } from "../lib/email";
 import { Users, Doctors, Assistants } from "../db/schemas";
-import { randomBytes } from "crypto";
 import type { usersTable } from "../types/users";
 import { z } from "zod";
 import bcrypt from "bcryptjs";
+import { generateEmailVerificationToken } from "../lib/hash";
 
 const name = z.object({ name: userSchema.shape.name });
 const email = z.object({ email: userSchema.shape.email });
@@ -28,10 +28,6 @@ const password = z
     message: "La clave nueva no puede ser igual a la actual",
     path: ["new"],
   });
-
-function GenerateEmailVerificationToken() {
-  return randomBytes(32).toString("hex");
-}
 
 export const usersRoute = new Hono<{ Variables: authVariables }>()
 
@@ -53,7 +49,7 @@ export const usersRoute = new Hono<{ Variables: authVariables }>()
         return c.json({ success: false, error: "Este email ya existe" });
 
       const hashed = await hashPassword(data.password);
-      const verificationToken = GenerateEmailVerificationToken();
+      const verificationToken = generateEmailVerificationToken();
 
       const user = await db
         .insert(Users)
@@ -173,7 +169,7 @@ export const usersRoute = new Hono<{ Variables: authVariables }>()
     if (!myuser) return c.json({ success: false }, 401);
     const data = c.req.valid("json");
 
-    const verificationToken = GenerateEmailVerificationToken();
+    const verificationToken = generateEmailVerificationToken();
     await db
       .update(Users)
       .set({

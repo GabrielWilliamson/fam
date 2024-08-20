@@ -1,10 +1,10 @@
 import { Hono } from "hono";
 import type { authVariables } from "../types/auth";
 import {
-  patientSchema,
-  pediatricPatientSchema,
-  type tPatientSchema,
-  type tPediatricPatientSchema,
+  generalSchema,
+  pediatricSchema,
+  type tPediatricSchema,
+  type tgeneralSchema,
 } from "../schemas/patientSchema";
 import { db } from "../db/db";
 import { Patients, Files, Doctors, Users, Relatives } from "../db/schemas";
@@ -151,12 +151,71 @@ export const patientsRoute = new Hono<{ Variables: authVariables }>()
     const body = await c.req.json();
     body.date = new Date(body.date);
 
-    const response = await handlePatientInsertion(
-      body,
-      doctorId,
-      pediatricPatientSchema
-    );
-    return c.json(response);
+    const result = pediatricSchema.safeParse(body);
+    if (!result.success) {
+      return c.json({
+        success: false,
+        error: result.error.message,
+        action: null,
+        patientId: "",
+      });
+    }
+
+    const validData = result.data;
+
+    let muny = "";
+    if (validData.nationality.countryCode === 505) {
+      const department = departmentsFull.find(
+        (dep) => dep.name === validData.department
+      );
+
+      const municipality = department?.municipalities.find(
+        (municipality) => municipality.code === validData.municipality
+      );
+      muny = municipality?.name!;
+    } else {
+      muny = validData.municipality;
+    }
+
+    const newAddres: addressType = {
+      department: validData.department,
+      nationality: validData.nationality.country,
+      municipality: muny,
+      address: validData.address,
+    };
+
+    try {
+      const patient = await db
+        .insert(Patients)
+        .values({
+          name: validData.name.toLocaleUpperCase(),
+          address: newAddres,
+          doctorId: doctorId,
+          date: validData.date,
+          sex: validData.sex,
+        })
+        .returning({ id: Patients.id });
+
+      await db.insert(Files).values({
+        id: NewId(),
+        patientId: patient[0].id,
+      });
+
+      return c.json({
+        success: true,
+        action: validData.action,
+        patientId: patient[0].id,
+        error: "",
+      });
+    } catch (e) {
+      console.log(e);
+      return c.json({
+        success: false,
+        error: "Error al guardar el paciente",
+        action: null,
+        patientId: "",
+      });
+    }
   })
 
   // NEW GENERAL PATIENT
@@ -190,12 +249,126 @@ export const patientsRoute = new Hono<{ Variables: authVariables }>()
     const body = await c.req.json();
     body.date = new Date(body.date);
 
-    const response = await handlePatientInsertion(
-      body,
-      doctorId,
-      patientSchema
-    );
-    return c.json(response);
+    if (body.dateDni) {
+      body.dateDni = new Date(body.dateDni);
+    }
+
+    const result = generalSchema.safeParse(body);
+    if (!result.success) {
+      return c.json({
+        success: false,
+        error: result.error.message,
+        action: null,
+        patientId: "",
+      });
+    }
+
+    const validData = result.data;
+    const cedula = validData.Dni ?? validData.foreign;
+
+    if (!cedula) {
+      return c.json({
+        success: false,
+        error: "Dato erroneo",
+        action: null,
+        patientId: "",
+      });
+    }
+
+    const dnis = await db
+      .select({
+        dni: Patients.dni,
+      })
+      .from(Patients)
+      .where(eq(Patients.dni, cedula));
+
+    if (dnis.length > 0) {
+      return c.json({
+        success: false,
+        error: "Esta cédula ya existe",
+        action: null,
+        patientId: "",
+      });
+    }
+
+    if (validData.phone !== null) {
+      const phones = await db
+        .select({
+          phones: Patients.phone,
+        })
+        .from(Patients)
+        .where(eq(Patients.phone, (validData as tgeneralSchema).phone!));
+
+      if (phones.length > 0) {
+        return c.json({
+          success: false,
+          error: "Este teléfono ya existe",
+          action: null,
+          patientId: "",
+        });
+      }
+    }
+
+    let muny = "";
+    if (validData.nationality.countryCode === 505) {
+      const department = departmentsFull.find(
+        (dep) => dep.name === validData.department
+      );
+
+      const municipality = department?.municipalities.find(
+        (municipality) => municipality.code === validData.municipality
+      );
+      muny = municipality?.name!;
+    } else {
+      muny = validData.municipality;
+    }
+
+    const newAddres: addressType = {
+      department: validData.department,
+      nationality: validData.nationality.country,
+      municipality: muny,
+      address: validData.address,
+    };
+
+    let newPhone: string | null = null;
+    if ("phone" in validData && validData.phone) {
+      newPhone = validData.nationality.countryCode + validData.phone.toString();
+    }
+
+    try {
+      const patient = await db
+        .insert(Patients)
+        .values({
+          name: validData.name.toUpperCase(),
+          address: newAddres,
+          doctorId: doctorId,
+          date: validData.date,
+          dni: cedula,
+          phone: newPhone,
+          sex: validData.sex,
+        })
+        .returning({ id: Patients.id });
+
+      await db.insert(Files).values({
+        id: NewId(),
+        patientId: patient[0].id,
+      });
+
+      return c.json({
+        success: true,
+        action: validData.action,
+        patientId: patient[0].id,
+        error: "",
+      });
+    } catch (e) {
+      console.log(e);
+      return c.json({
+        success: false,
+        error: "Error al guardar el paciente",
+        action: null,
+        patientId: "",
+      });
+    }
   })
 
   // SEARCH FOR FILE ID
@@ -369,69 +542,3 @@ export const patientsRoute = new Hono<{ Variables: authVariables }>()
 
     return c.json({ success: true, data: patient[0] as searchPatient });
   });
-
-async function handlePatientInsertion<
-  T extends tPatientSchema | tPediatricPatientSchema
->(data: T, doctorId: string, schema: z.ZodSchema<T>): Promise<ApiResponse> {
-  const result = schema.safeParse(data);
-  if (!result.success) {
-    return { success: false, error: result.error, action: null };
-  }
-
-  const validData = result.data;
-
-  let muny = "";
-
-  if (validData.nationality.countryCode === 505) {
-    const department = departmentsFull.find(
-      (dep) => dep.name === validData.department
-    );
-
-    const municipality = department?.municipalities.find(
-      (municipality) => municipality.code === validData.municipality
-    );
-    muny = municipality?.name!;
-  } else {
-    muny = validData.municipality;
-  }
-
-  const newAddres: addressType = {
-    department: validData.department,
-    nationality: validData.nationality.country,
-    municipality: muny,
-    address: validData.address,
-  };
-
-  let newPhone: string | null = null;
-  if ("phone" in validData && validData.phone) {
-    newPhone = validData.nationality.countryCode + validData.phone.toString();
-  }
-
-  try {
-    const patient = await db
-      .insert(Patients)
-      .values({
-        name: validData.name.toLocaleUpperCase(),
-        address: newAddres,
-        doctorId: doctorId,
-        date: validData.date,
-        dni: (validData as tPatientSchema).DNI,
-        phone: newPhone,
-        sex: validData.sex,
-      })
-      .returning({ id: Patients.id });
-
-    await db.insert(Files).values({
-      id: NewId(),
-      patientId: patient[0].id,
-    });
-
-    return {
-      success: true,
-      action: validData.action,
-      patientId: patient[0].id,
-    };
-  } catch (error) {
-    return { success: false, error: error, action: null };
-  }
-}

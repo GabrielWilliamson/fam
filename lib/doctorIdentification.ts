@@ -10,18 +10,36 @@ export default async function doctorIdentification(
   let doctorId: string | null = null;
 
   try {
-    const result = await db
-      .select({ id: Doctors.id })
+    if (role === "DOCTOR") {
+      const res = await db
+        .select({ id: Doctors.id })
+        .from(Doctors)
+        .where(eq(Doctors.userId, userId))
+        .limit(1);
+      if (res.length > 0) {
+        doctorId = res[0].id;
+        return doctorId;
+      }
+    }
+
+    const assistant = await db
+      .select()
+      .from(Assistants)
+      .where(eq(Assistants.userId, userId))
+      .limit(1);
+    if (assistant.length <= 0) {
+      doctorId = null;
+      return doctorId;
+    }
+
+    const doctor = await db
+      .select()
       .from(Doctors)
-      .leftJoin(
-        Assistants,
-        or(eq(Doctors.userId, userId), eq(Assistants.userId, userId))
-      )
-      .where(or(eq(Doctors.userId, userId), eq(Assistants.userId, userId)))
+      .where(eq(Doctors.assistantId, assistant[0].id))
       .limit(1);
 
-    if (result.length > 0) {
-      doctorId = result[0].id;
+    if (doctor.length > 0) {
+      doctorId = doctor[0].id;
     }
   } catch (error) {
     console.error("Error fetching doctor identification:", error);

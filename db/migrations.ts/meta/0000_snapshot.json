@@ -1,5 +1,5 @@
 {
-  "id": "a90e43f2-da3d-4031-9b7a-4c2d72541e73",
+  "id": "3ae9acd8-51d3-4269-84c3-43b841b7c37e",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -20,6 +20,13 @@
           "type": "uuid",
           "primaryKey": false,
           "notNull": true
+        },
+        "amount": {
+          "name": "amount",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
         }
       },
       "indexes": {},
@@ -408,6 +415,18 @@
           "primaryKey": false,
           "notNull": true
         },
+        "infecto": {
+          "name": "infecto",
+          "type": "text[]",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "hereditary": {
+          "name": "hereditary",
+          "type": "text[]",
+          "primaryKey": false,
+          "notNull": false
+        },
         "createdAt": {
           "name": "createdAt",
           "type": "timestamp",
@@ -490,13 +509,6 @@
         },
         "createdAt": {
           "name": "createdAt",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        },
-        "updatedAt": {
-          "name": "updatedAt",
           "type": "timestamp",
           "primaryKey": false,
           "notNull": true,
@@ -710,9 +722,10 @@
         },
         "price": {
           "name": "price",
-          "type": "numeric",
+          "type": "double precision",
           "primaryKey": false,
-          "notNull": false
+          "notNull": false,
+          "default": 0
         },
         "emergency": {
           "name": "emergency",
@@ -729,13 +742,6 @@
         },
         "createdAt": {
           "name": "createdAt",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        },
-        "updatedAt": {
-          "name": "updatedAt",
           "type": "timestamp",
           "primaryKey": false,
           "notNull": true,

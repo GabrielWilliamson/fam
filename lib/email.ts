@@ -1,33 +1,63 @@
 import nodemailer from "nodemailer";
 
-export const sendVerificationEmail = async (email: string, token: string) => {
-  const { SMPT_EMAIL, SMTP_GMAIL_PASS, HOST } = process.env;
-  var transport = nodemailer.createTransport({
+const createTransporter = () => {
+  const { SMPT_EMAIL, SMTP_GMAIL_PASS } = process.env;
+  return nodemailer.createTransport({
     service: "gmail",
     auth: {
       user: SMPT_EMAIL,
       pass: SMTP_GMAIL_PASS,
     },
   });
+};
 
+const sendEmail = async (emailData: nodemailer.SendMailOptions) => {
+  try {
+    const transporter = createTransporter();
+    const info = await transporter.sendMail(emailData);
+    console.log("Email sent successfully:", info.response);
+  } catch (error) {
+    console.error("Failed to send email:", error);
+    throw error;
+  }
+};
+
+export const sendVerificationEmail = async (email: string, token: string) => {
+  const { HOST } = process.env;
   const emailData = {
     from: '"CLINICA DE ESPECIALIDADES FAMED" <verification@test.com>',
     to: email,
     subject: "Verificación de Email",
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px;">
-        <p>¡Gracias por registrarte en nuestro servicio de salud!</p>
-        <p>Para activar tu cuenta, haz clic en el siguiente enlace:</p>
+        <h2 style="color: #007bff;">Verifica tu cuenta</h2>
+        <p>¡Gracias por usar esta app!</p>
+        <p>Para verificar tu email, haz clic en el siguiente enlace:</p>
         <a href="${HOST}/verify?email=${email}&token=${token}" style="display: inline-block; padding: 10px 20px; background-color: #007bff; color: #fff; text-decoration: none; border-radius: 5px; margin-top: 15px;">Verificar Ahora</a>
-        <p style="margin-top: 20px;">Después de verificar tu correo electrónico, te recomendamos cambiar tu contraseña por seguridad.</p>
+        <p style="margin-top: 20px;">Por tu seguridad, te recomendamos cambiar tu clave después de verificar tu cuenta.</p>
       </div>
     `,
   };
 
-  try {
-    const info = await transport.sendMail(emailData);
-  } catch (error) {
-    console.error("Failed to send email:", error);
-    throw error;
-  }
+  await sendEmail(emailData);
+};
+
+export const sendForgotEmail = async (email: string, token: string) => {
+  const { HOST } = process.env;
+  const emailData = {
+    from: '"CLINICA DE ESPECIALIDADES FAMED" <verification@test.com>',
+    to: email,
+    subject: "Recuperación de clave",
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px;">
+        <h2 style="color: #007bff;">Recupera tu clave</h2>
+        <p>Hemos recibido una solicitud para restablecer tu clave.</p>
+        <p>Para continuar con el proceso, haz clic en el siguiente enlace:</p>
+        <a href="${HOST}/reset?email=${email}&token=${token}" style="display: inline-block; padding: 10px 20px; background-color: #007bff; color: #fff; text-decoration: none; border-radius: 5px; margin-top: 15px;">Restablecer Contraseña</a>
+        <p style="margin-top: 20px;">Por razones de seguridad, te recomendamos cambiar tu clave después de restablecerla.</p>
+      </div>
+    `,
+  };
+
+  await sendEmail(emailData);
 };

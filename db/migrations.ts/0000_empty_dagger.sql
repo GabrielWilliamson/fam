@@ -12,7 +12,8 @@ END $$;
 --> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "assistants" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-	"userId" uuid NOT NULL
+	"userId" uuid NOT NULL,
+	"amount" double precision DEFAULT 0 NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "dates" (
@@ -68,6 +69,8 @@ CREATE TABLE IF NOT EXISTS "exams" (
 CREATE TABLE IF NOT EXISTS "files" (
 	"id" text PRIMARY KEY NOT NULL,
 	"patientId" uuid NOT NULL,
+	"infecto" text[],
+	"hereditary" text[],
 	"createdAt" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
@@ -81,7 +84,6 @@ CREATE TABLE IF NOT EXISTS "patients" (
 	"doctorId" uuid NOT NULL,
 	"date" timestamp NOT NULL,
 	"createdAt" timestamp DEFAULT now() NOT NULL,
-	"updatedAt" timestamp DEFAULT now() NOT NULL,
 	CONSTRAINT "patients_dni_unique" UNIQUE("dni")
 );
 --> statement-breakpoint
@@ -110,11 +112,10 @@ CREATE TABLE IF NOT EXISTS "queries" (
 	"observations" text,
 	"diag" text,
 	"dateId" uuid NOT NULL,
-	"price" numeric,
+	"price" double precision DEFAULT 0,
 	"emergency" boolean DEFAULT false,
 	"doctorsId" uuid NOT NULL,
-	"createdAt" timestamp DEFAULT now() NOT NULL,
-	"updatedAt" timestamp DEFAULT now() NOT NULL
+	"createdAt" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "relatives" (

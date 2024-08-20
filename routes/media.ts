@@ -8,20 +8,22 @@ import { Queries } from "../db/schemas";
 import { eq } from "drizzle-orm";
 import doctorIdentification from "../lib/doctorIdentification";
 import type { resource } from "../types/queries";
-import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import {
+  getSignedUrl,
+  S3RequestPresigner,
+} from "@aws-sdk/s3-request-presigner";
 import {
   GetObjectAclCommand,
+  GetObjectCommand,
   PutObjectCommand,
   S3Client,
 } from "@aws-sdk/client-s3";
 
-import dotenv from "dotenv";
-dotenv.config();
 
 const region = process.env.AWS_BUCKET_REGION!;
 const bucketName = process.env.AWS_BUCKET_NAME!;
 const accessKeyId = process.env.AWS_ACCESS_KEY!;
-const secretAccessKey = process.env.AWS_ACCESS_KEY!;
+const secretAccessKey = process.env.AWS_SECRET_ACCESS_KEY!;
 
 export const s3 = new S3Client({
   region: region,
@@ -45,10 +47,7 @@ export const mediaRoute = new Hono<{ Variables: authVariables }>()
     if (!queryId) return c.json({ error: "No se encontro el query" }, 400);
 
     //validar que esa querie exista y que tenga acceso a ella
-
     const body = await c.req.parseBody();
-    console.log(body);
-
     const files: Blob[] = [];
 
     // Recorrer las entradas del objeto
@@ -155,19 +154,29 @@ async function saveIdResources(fileId: string, queryId: string) {
   }
 }
 
-const getResources = async (list: string[]): Promise<resource[]> => {
+const getResources = async (
+  list: string[]
+): Promise<{ id: string; url: string }[]> => {
+  const s3 = new S3Client({
+    region: region,
+    credentials: {
+      accessKeyId: accessKeyId,
+      secretAccessKey: secretAccessKey,
+    },
+  });
+
   const resourcePromises = list.map(async (idResource: string) => {
-    const command = new GetObjectAclCommand({
+    const command = new GetObjectCommand({
       Bucket: bucketName,
       Key: idResource,
     });
 
     const url = await getSignedUrl(s3, command, { expiresIn: 3600 });
+
     return { id: idResource, url };
   });
 
-  // Espera a que todas las promesas se resuelvan
+  // Wait for all the promises to resolve
   const resources = await Promise.all(resourcePromises);
   return resources;
 };
-
