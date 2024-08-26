@@ -1,6 +1,6 @@
 {
-  "id": "c4fb52b2-9dea-4277-8f2a-db70f77d9525",
-  "prevId": "00000000-0000-0000-0000-000000000000",
+  "id": "814e6b74-32e0-46aa-8af5-c27e613a48fe",
+  "prevId": "bcf12861-511e-4f54-a083-5c8dcb0dc581",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -726,6 +726,12 @@
           "primaryKey": false,
           "notNull": false
         },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
         "dateId": {
           "name": "dateId",
           "type": "uuid",
@@ -739,6 +745,12 @@
           "notNull": false,
           "default": 0
         },
+        "userChargeId": {
+          "name": "userChargeId",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
         "emergency": {
           "name": "emergency",
           "type": "boolean",
@@ -746,8 +758,8 @@
           "notNull": false,
           "default": false
         },
-        "doctorsId": {
-          "name": "doctorsId",
+        "doctorId": {
+          "name": "doctorId",
           "type": "uuid",
           "primaryKey": false,
           "notNull": true
@@ -788,12 +800,12 @@
           "onDelete": "no action",
           "onUpdate": "no action"
         },
-        "queries_doctorsId_doctors_id_fk": {
-          "name": "queries_doctorsId_doctors_id_fk",
+        "queries_doctorId_doctors_id_fk": {
+          "name": "queries_doctorId_doctors_id_fk",
           "tableFrom": "queries",
           "tableTo": "doctors",
           "columnsFrom": [
-            "doctorsId"
+            "doctorId"
           ],
           "columnsTo": [
             "id"

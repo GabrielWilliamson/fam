@@ -14,7 +14,7 @@ export type tLoginSchema = z.infer<typeof loginSchema>;
 
 export const verifySchema = z.object({
   email: z.string().email({ message: "Ingrese un email válido" }),
-  token: z.string().length(32, { message: "Token de verificación incorrecto" }),
+  token: z.string().length(64, { message: "Token de verificación incorrecto" }),
 });
 export type tVerifySchema = z.infer<typeof verifySchema>;
 

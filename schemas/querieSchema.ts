@@ -15,6 +15,12 @@ export type history = z.infer<typeof historySchema>;
 export const interrogationSchema = z.object({
   interrogation: z.string().max(700, { message: "Máximo 700 caracteres" }),
 });
+export const priceSchema = z.object({
+  price: z.number().positive(),
+  pay: z.boolean().default(false),
+});
+
+export type price = z.infer<typeof priceSchema>;
 
 export type interrogation = z.infer<typeof interrogationSchema>;
 
@@ -33,7 +39,27 @@ export const autoSchema = z.object({
     "gen",
     "neu",
     "obs",
-    "skin"
+    "skin",
   ]),
 });
 export type auto = z.infer<typeof autoSchema>;
+
+export const headSchema = z.object({
+  craneo: z.string().optional().nullable(),
+  ojos: z.string().optional().nullable(),
+  orejas: z.string().optional().nullable(),
+  nariz: z.string().optional().nullable(),
+  boca: z.string().optional().nullable(),
+  cuello: z.string().optional().nullable(),
+});
+
+export type head = z.infer<typeof headSchema>;
+
+export const toraxSchema = z.object({
+  pulmonares: z.string().optional().nullable(),
+  mamas: z.string().optional().nullable(),
+  caja: z.string().optional().nullable(),
+  cardiaco: z.string().optional().nullable(),
+});
+
+export type torax = z.infer<typeof toraxSchema>;

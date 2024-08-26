@@ -6,10 +6,9 @@ import doctorIdentification from "../lib/doctorIdentification";
 import { dateSchema } from "../schemas/dateSchema";
 import { and, or, lte, gte, eq } from "drizzle-orm/expressions";
 
-
 export const datesRoute = new Hono<{ Variables: authVariables }>()
 
-  // FULL APPOINTMENTS
+  // full appointments where status is scheduled
   .get("/", async (c) => {
     const user = c.get("user");
     if (!user) return c.json({ success: false, data: [] }, 401);
@@ -28,7 +27,7 @@ export const datesRoute = new Hono<{ Variables: authVariables }>()
       })
       .from(Dates)
       .innerJoin(Patients, eq(Patients.id, Dates.patientId))
-      .where(eq(Dates.doctorId, doctorId));
+      .where(and(eq(Dates.doctorId, doctorId), eq(Dates.status, "scheduled")));
 
     const adjustedResults = result.map((event: any) => {
       const adjustedEnd = new Date(event.end);
@@ -85,33 +84,21 @@ export const datesRoute = new Hono<{ Variables: authVariables }>()
     return c.json({ success: true, data: adjustedResults });
   })
 
-  //NEW APPOINTMENT
   .post("/", async (c) => {
     const user = c.get("user");
-    if (!user) return c.json({ success: false, error: "No autorizado" }, 401);
-    if (user.role === "ADMIN")
-      return c.json({ success: false, error: "No autorizado" }, 401);
+    if (!user) return c.json({ success: false }, 401);
+    if (user.role === "ADMIN") return c.json({ success: false }, 401);
 
     const doctorId = await doctorIdentification(user.id, user.role);
-    if (!doctorId)
-      return c.json({ success: false, error: "No autorizado" }, 401);
+    if (!doctorId) return c.json({ success: false }, 401);
 
     const body = await c.req.json();
     body.date = new Date(body.date);
     const result = dateSchema.safeParse(body);
-    if (!result.success) return c.json({ success: false, error: "Datos erroneos" });
+    if (!result.success) return c.json({ success: false, error: result.error });
 
+    
     const { start, end, date, patient } = result.data;
-
-    // validar si el paciente corresponde al medico
-    const findPatient = await db
-      .select()
-      .from(Patients)
-      .where(and(eq(Patients.id, patient.id), eq(Patients.doctorId, doctorId)));
-
-    if (findPatient.length <= 0) {
-      return c.json({ success: false, error: "No autorizado por el medico" });
-    }
 
     // Convertir la fecha de inicio
     const startDate = new Date(date);
@@ -131,20 +118,17 @@ export const datesRoute = new Hono<{ Variables: authVariables }>()
     // GTE MAYOR O IGUAL QUE
     // LT MENOR QUE
     // GT MAYOR QUE
-
-    //CONVERTIR LAS FECHAS RECIBIDAS A UTC
     const refineEnd = new Date(endDate);
     refineEnd.setMinutes(refineEnd.getMinutes() - 1);
 
- 
     const existingDates = await db.query.Dates.findMany({
       where: (dates) =>
         and(
           eq(dates.doctorId, doctorId),
           or(
             and(
-              lte(dates.start, startDate), // La cita existente empieza antes que la nueva termine
-              gte(dates.end, refineEnd) // La cita existente termina después que la nueva comienza
+              lte(dates.start, refineEnd), // La cita existente empieza antes que la nueva termine
+              gte(dates.end, startDate) // La cita existente termina después que la nueva comienza
             )
           )
         ),
@@ -159,19 +143,18 @@ export const datesRoute = new Hono<{ Variables: authVariables }>()
     const et = new Date(endDate);
     et.setMinutes(et.getMinutes() - 1);
 
-
     try {
       await db.insert(Dates).values({
         start: startDate,
         end: et,
         doctorId: doctorId,
         patientId: patient.id,
-        status: "agendada",
+        status: "scheduled",
       });
 
-      return c.json({ success: true, error: null });
+      return c.json({ success: true });
     } catch (error) {
-      console.error("Error al crear la cita:");
+      console.error("Error al crear la cita:", error);
       return c.json({ success: false, error: "Error al crear la cita" });
     }
   });

@@ -1,25 +1,23 @@
-- que la cedula sea opcional para los padres 
+
+- Puede dictar una prescripcion y una referecia al mismo tiempo
+ **Respuesta**
+
+- Considera util el envio de la prescripcion en formato de imagen a los padres
+ **Respuesta**
+
+- En el caso de datos antropometricos como Perímetro Cefálico, Perímetro torácico, Perímetro Abdominal y Área superficie corporal se puede utilizar los centimetros como unidad de medida 
+ **Respuesta**
+
+- El consentimiento informado en que momento se realiza y que apartado conviene ubicar la opcion de generar este documento por cuestion de accesibilidad, se le da una copia al paciente?, 
+considera util guardar los consentimientos en el expediente del paciente de manera digital 
+ **Respuesta**
 
 
-- enviar notificaciones al whatsapp cada vez que un paciente llega a 
-  esperar no necesariamente un paciente
-
-
-- con cuanta anticipacion como maximo se puede agendar una cita, con cuanta anticipacion como minimo minimo 6 meses 
-
-
-
-- como prefiere las busquedas de paciente para agregar una cita, con cedula o con # expediente
-
-
-- considera la posibilidad de que cree una prescripcion pero antes de terminar la consulta decide que no recetara ningun medicamento es decir eliminar definitivamente teniendo en cuenta que eliminar no es actualizar 
-
-
-- puede dictar una prescripcion y una referecia al mismo tiempo
-
+ - la asistente puede ver o agregar la foto de perfil del paciente 
 
 
 
-- PREGUNTAS
-- ACERCA DEL FORMATO DE LA CEDULA 
-- ACERCA DE CODIGOS DE MUNICIPIOS 
+
+
+
+

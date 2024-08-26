@@ -1,6 +1,6 @@
 {
-  "id": "c4fb52b2-9dea-4277-8f2a-db70f77d9525",
-  "prevId": "00000000-0000-0000-0000-000000000000",
+  "id": "bcf12861-511e-4f54-a083-5c8dcb0dc581",
+  "prevId": "e89b1deb-7a40-408c-a443-79f97ad00762",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -726,6 +726,12 @@
           "primaryKey": false,
           "notNull": false
         },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
         "dateId": {
           "name": "dateId",
           "type": "uuid",
@@ -738,6 +744,12 @@
           "primaryKey": false,
           "notNull": false,
           "default": 0
+        },
+        "userChargeId": {
+          "name": "userChargeId",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
         },
         "emergency": {
           "name": "emergency",

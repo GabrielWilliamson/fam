@@ -1,6 +1,6 @@
 {
-  "id": "3c7fce23-9a56-4329-b981-39fca04f892a",
-  "prevId": "3ae9acd8-51d3-4269-84c3-43b841b7c37e",
+  "id": "e89b1deb-7a40-408c-a443-79f97ad00762",
+  "prevId": "c4fb52b2-9dea-4277-8f2a-db70f77d9525",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -324,15 +324,15 @@
           "primaryKey": false,
           "notNull": false
         },
-        "head": {
-          "name": "head",
-          "type": "text",
+        "hea": {
+          "name": "hea",
+          "type": "json",
           "primaryKey": false,
           "notNull": false
         },
-        "torax": {
-          "name": "torax",
-          "type": "text",
+        "tor": {
+          "name": "tor",
+          "type": "json",
           "primaryKey": false,
           "notNull": false
         },
@@ -488,6 +488,12 @@
           "type": "text",
           "primaryKey": false,
           "notNull": true
+        },
+        "image": {
+          "name": "image",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
         },
         "address": {
           "name": "address",
@@ -716,6 +722,12 @@
         },
         "diag": {
           "name": "diag",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "status": {
+          "name": "status",
           "type": "text",
           "primaryKey": false,
           "notNull": false
@@ -992,13 +1004,6 @@
         },
         "createdAt": {
           "name": "createdAt",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        },
-        "updatedAt": {
-          "name": "updatedAt",
           "type": "timestamp",
           "primaryKey": false,
           "notNull": true,

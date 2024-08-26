@@ -55,8 +55,8 @@ CREATE TABLE IF NOT EXISTS "exams" (
 	"antropometrics" json,
 	"aspects" text,
 	"skin" text,
-	"head" text,
-	"torax" text,
+	"hea" json,
+	"tor" json,
 	"abd" text,
 	"anus" text,
 	"genitu" text,
@@ -71,6 +71,7 @@ CREATE TABLE IF NOT EXISTS "files" (
 	"patientId" uuid NOT NULL,
 	"infecto" text[],
 	"hereditary" text[],
+	"app" json,
 	"createdAt" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
@@ -79,6 +80,7 @@ CREATE TABLE IF NOT EXISTS "patients" (
 	"name" text NOT NULL,
 	"dni" text,
 	"sex" text NOT NULL,
+	"image" text,
 	"address" json NOT NULL,
 	"phone" text,
 	"doctorId" uuid NOT NULL,
@@ -148,7 +150,6 @@ CREATE TABLE IF NOT EXISTS "users" (
 	"role" "userRoles" NOT NULL,
 	"status" boolean DEFAULT true NOT NULL,
 	"createdAt" timestamp DEFAULT now() NOT NULL,
-	"updatedAt" timestamp DEFAULT now() NOT NULL,
 	CONSTRAINT "users_email_unique" UNIQUE("email")
 );
 --> statement-breakpoint

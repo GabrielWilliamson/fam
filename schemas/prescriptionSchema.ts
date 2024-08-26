@@ -20,7 +20,7 @@ export type detail = z.infer<typeof detailSchema>;
 export type tPrescriptionDetail = z.infer<typeof prescriptionDetailSchema>;
 
 export type drugSearch = {
-  id: string;
+  drugId: string;
   tradeName: string;
   genericName: string | null;
   presentations: string[];

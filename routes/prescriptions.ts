@@ -38,7 +38,7 @@ export const prescriptionsRoute = new Hono<{ Variables: authVariables }>()
           .select()
           .from(Queries)
           .where(
-            and(eq(Queries.id, querieId), eq(Queries.doctorsId, doctorId))
+            and(eq(Queries.id, querieId), eq(Queries.doctorId, doctorId))
           );
 
         if (!findQuery[0])
@@ -125,7 +125,7 @@ export const prescriptionsRoute = new Hono<{ Variables: authVariables }>()
           .from(Queries)
           .innerJoin(Prescriptions, eq(Prescriptions.querieId, Queries.id))
           .where(
-            and(eq(Queries.id, querieId), eq(Queries.doctorsId, doctorId))
+            and(eq(Queries.id, querieId), eq(Queries.doctorId, doctorId))
           );
 
         if (!findQuery[0])
@@ -204,7 +204,7 @@ export const prescriptionsRoute = new Hono<{ Variables: authVariables }>()
       .select({
         id: Prescriptions.id,
         querieId: Prescriptions.querieId,
-        doctorId: Queries.doctorsId,
+        doctorId: Queries.doctorId,
       })
       .from(Prescriptions)
       .innerJoin(Queries, eq(Prescriptions.querieId, Queries.id))

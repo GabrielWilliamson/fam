@@ -11,8 +11,6 @@ import { Assistants, Doctors, Users } from "../db/schemas";
 import { db } from "../db/db";
 import { eq, isNull } from "drizzle-orm";
 
-//REVISAR EL ACCESO DEL MEDICO
-
 export const doctorRoute = new Hono<{ Variables: authVariables }>()
 
   //save credential
@@ -36,7 +34,6 @@ export const doctorRoute = new Hono<{ Variables: authVariables }>()
       return c.json({ success: false, error: "Ocurrió un error" }, 500);
     }
   })
-
   //save file type
   .patch("/type", zValidator("json", specialiteSchema), async (c) => {
     const user = c.get("user");
@@ -56,8 +53,7 @@ export const doctorRoute = new Hono<{ Variables: authVariables }>()
       return c.json({ success: false, error: "Ocurrió un error" }, 500);
     }
   })
-
-  // get doctor info
+  //get doctor info
   .get("/info", async (c) => {
     const user = c.get("user");
 
@@ -105,7 +101,6 @@ export const doctorRoute = new Hono<{ Variables: authVariables }>()
       assistantName: assistant[0]?.assistantName || null,
     });
   })
-
   //save skils
   .get("/skils", zValidator("json", skillsSchema), async (c) => {
     const user = c.get("user");
@@ -127,7 +122,6 @@ export const doctorRoute = new Hono<{ Variables: authVariables }>()
       return c.json({ success: false, error: "Ocurrió un error" }, 500);
     }
   })
-
   //delete skills //CAMBIAR A REDES SOCIALES
   .delete("/skils/:skill", async (c) => {
     const user = c.get("user");
@@ -163,7 +157,6 @@ export const doctorRoute = new Hono<{ Variables: authVariables }>()
       return c.json({ success: false });
     }
   })
-
   //save my assistant
   .patch("/assistant", zValidator("json", addAssitantSchema), async (c) => {
     const user = c.get("user");
@@ -196,26 +189,7 @@ export const doctorRoute = new Hono<{ Variables: authVariables }>()
       return c.json({ success: false, error: "Ocurrió un error" }, 500);
     }
   })
-
-  //get my assistant
-  // .get("/assistant", async (c) => {
-  //   const user = c.get("user");
-  //   if (!user) return c.body(null, 401);
-  //   if (user.role !== "DOCTOR") return c.body(null, 401);
-
-  //   const assistants = await db
-  //     .select({
-  //       assistantId: Assistants.id,
-  //       assistantName: Users.name,
-  //     })
-  //     .from(Assistants)
-  //     .innerJoin(Doctors, eq(Assistants.id, Doctors.assistantId))
-  //     .innerJoin(Users, eq(Assistants.userId, Users.id))
-  //     .where(eq(Doctors.userId, user.id));
-
-  //   return c.json(assistants);
-  // })
-
+  //get assistants
   .get("/list", async (c) => {
     const user = c.get("user");
     if (!user) return c.json({ success: false, data: null }, 401);

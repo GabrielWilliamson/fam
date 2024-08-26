@@ -30,7 +30,7 @@ export const sendVerificationEmail = async (email: string, token: string) => {
     subject: "Verificación de Email",
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px;">
-        <h2 style="color: #007bff;">Verifica tu cuenta</h2>
+        <h2 style="color: #007bff;">Verifica tu Email</h2>
         <p>¡Gracias por usar esta app!</p>
         <p>Para verificar tu email, haz clic en el siguiente enlace:</p>
         <a href="${HOST}/verify?email=${email}&token=${token}" style="display: inline-block; padding: 10px 20px; background-color: #007bff; color: #fff; text-decoration: none; border-radius: 5px; margin-top: 15px;">Verificar Ahora</a>

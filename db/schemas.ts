@@ -25,7 +25,6 @@ export const Users = pgTable("users", {
   role: UserRoles("role").notNull(),
   status: boolean("status").default(true).notNull(),
   createdAt: timestamp("createdAt").notNull().defaultNow(),
-  updatedAt: timestamp("updatedAt").notNull().defaultNow(),
 });
 export const UserRelations = relations(Users, ({ one }) => ({
   session: one(Sessions, {
@@ -83,6 +82,7 @@ export const Patients = pgTable("patients", {
   name: text("name").notNull(),
   dni: text("dni").unique(),
   sex: text("sex").notNull(),
+  image: text("image"),
   address: json("address").notNull(),
   phone: text("phone"),
   doctorId: uuid("doctorId")
@@ -147,12 +147,14 @@ export const Queries = pgTable("queries", {
   history: text("history"),
   observations: text("observations"),
   diag: text("diag"),
+  status: text("status"),
   dateId: uuid("dateId")
     .notNull()
     .references(() => Dates.id),
   price: doublePrecision("price").default(0),
+  userChargeId: uuid("userChargeId"),
   emergency: boolean("emergency").default(false),
-  doctorsId: uuid("doctorsId")
+  doctorId: uuid("doctorId")
     .notNull()
     .references(() => Doctors.id),
   createdAt: timestamp("createdAt").notNull().defaultNow(),
@@ -223,8 +225,8 @@ export const Exams = pgTable("exams", {
   antropometrics: json("antropometrics"),
   aspects: text("aspects"),
   skin: text("skin"),
-  head: text("head"),
-  torax: text("torax"),
+  hea: json("hea"),
+  tor: json("tor"),
   abd: text("abd"),
   anus: text("anus"),
   genitu: text("genitu"),

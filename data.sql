@@ -1,3 +1,4 @@
+-- Active: 1723649901072@@127.0.0.1@5432@famed@public
 --Insert admin in users table
 INSERT INTO
     public."users" (
@@ -6,8 +7,7 @@ INSERT INTO
         "email",
         "emailVerifiedAt",
         "image",
-        "role",
-        "updatedAt"
+        "role"
     )
 VALUES (
         'Admin',
@@ -15,12 +15,9 @@ VALUES (
         'admin@gmail.com',
         '2024-02-10 22:47:14.056',
         NULL,
-        'ADMIN',
-        '2024-02-10 22:47:14.056'
+        'ADMIN'
     )
     -- Insert the first doctor and user
-
-
 
 INSERT INTO
     public."users" (
@@ -29,8 +26,7 @@ INSERT INTO
         "email",
         "emailVerifiedAt",
         "image",
-        "role",
-        "updatedAt"
+        "role"
     )
 VALUES (
         'Doctor 1',
@@ -38,8 +34,7 @@ VALUES (
         'doctor1@gmail.com',
         '2024-02-10 22:47:14.056',
         NULL,
-        'DOCTOR',
-        '2024-02-10 22:47:14.056'
+        'DOCTOR'
     ),
     (
         'Doctor 2',
@@ -47,8 +42,7 @@ VALUES (
         'doctor2@gmail.com',
         '2024-02-10 22:47:14.056',
         NULL,
-        'DOCTOR',
-        '2024-02-10 22:47:14.056'
+        'DOCTOR'
     ),
     (
         'Doctor 3',
@@ -56,8 +50,7 @@ VALUES (
         'doctor3@gmail.com',
         '2024-02-10 22:47:14.056',
         NULL,
-        'DOCTOR',
-        '2024-02-10 22:47:14.056'
+        'DOCTOR'
     );
 
 -- Insert into the doctors table using the userId fetched by the email
@@ -99,8 +92,8 @@ INSERT INTO
         "email",
         "emailVerifiedAt",
         "image",
-        "role",
-        "updatedAt"
+        "role"
+        
     )
 VALUES (
         'Assistant 1',
@@ -108,8 +101,7 @@ VALUES (
         'assistant1@gmail.com',
         '2024-02-10 22:47:14.056',
         NULL,
-        'ASSISTANT',
-        '2024-02-10 22:47:14.056'
+        'ASSISTANT'
     ),
     (
         'Assistant 2',
@@ -117,8 +109,7 @@ VALUES (
         'assistant2@gmail.com',
         '2024-02-10 22:47:14.056',
         NULL,
-        'ASSISTANT',
-        '2024-02-10 22:47:14.056'
+        'ASSISTANT'
     ),
     (
         'Assistant 3',
@@ -126,13 +117,11 @@ VALUES (
         'assistant3@gmail.com',
         '2024-02-10 22:47:14.056',
         NULL,
-        'ASSISTANT',
-        '2024-02-10 22:47:14.056'
+        'ASSISTANT'
     );
 
 INSERT INTO
     assistants ("userId")
-    
 VALUES (
         (
             SELECT "id"
