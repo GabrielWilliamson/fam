@@ -375,7 +375,7 @@ export const patientsRoute = new Hono<{ Variables: authVariables }>()
   .get("/file", async (c) => {
     const user = c.get("user");
     if (!user) return c.json({ success: false, data: null }, 401);
-    if (user.role != "DOCTOR")
+    if (user.role === "ADMIN")
       return c.json({ success: false, data: null }, 401);
 
     const doctorId = await doctorIdentification(user.id, user.role);

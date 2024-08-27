@@ -4,8 +4,8 @@ import doctorIdentification from "../lib/doctorIdentification";
 import { zValidator } from "@hono/zod-validator";
 import { addChageSchema } from "../schemas/servicesSchema";
 import { db } from "../db/db";
-import { eq, sql } from "drizzle-orm";
-import { Assistants, Doctors, Users } from "../db/schemas";
+import { eq, sql, and, sum } from "drizzle-orm";
+import { Assistants, Doctors, Queries, Users } from "../db/schemas";
 
 export const servicesRoute = new Hono<{ Variables: authVariables }>()
 
@@ -42,6 +42,46 @@ export const servicesRoute = new Hono<{ Variables: authVariables }>()
       .where(eq(Assistants.id, assistant[0].assistantId));
 
     return c.json({ success: true });
+  })
+
+  .get("/money", async (c) => {
+    const user = c.get("user");
+    if (!user)
+      return c.json({ success: false, change: null, total: null }, 401);
+    if (user.role !== "ASSISTANT")
+      return c.json({ success: false, change: null, total: null }, 401);
+
+    const doctorId = await doctorIdentification(user.id, user.role);
+    if (!doctorId) {
+      return c.json({ success: false, change: null, total: null }, 401);
+    }
+
+    const data = await db
+      .select({
+        change: Assistants.amount,
+      })
+      .from(Assistants)
+      .where(eq(Assistants.userId, user.id));
+
+    //efectivo actual
+    const result = await db
+      .select({
+        totalPrice: sum(Queries.price),
+      })
+      .from(Queries)
+      .where(
+        and(
+          eq(Queries.doctorId, doctorId),
+          eq(Queries.status, "end"),
+          eq(Queries.userChargeId, user.id),
+          eq(Queries.conciliated, false)
+        )
+      );
+
+    console.log(result);
+
+    const totalPrice = result[0]?.totalPrice ?? 0;
+    return c.json({ success: true, change: data[0].change ?? 0, total: totalPrice });
   })
 
   //get info services

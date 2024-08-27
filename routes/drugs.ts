@@ -3,7 +3,7 @@ import { drugsSchema } from "../schemas/drugSchema";
 import { zValidator } from "@hono/zod-validator";
 import type { authVariables } from "../types/auth";
 import type { drugsTable } from "../types/drugs";
-import { Doctors, Drugs, Users } from "../db/schemas";
+import { Doctors, Drugs, PrescriptionsDetails, Users } from "../db/schemas";
 import { db } from "../db/db";
 import { and, eq, or, sql } from "drizzle-orm";
 import errorMap from "zod/locales/en.js";
@@ -52,7 +52,6 @@ export const drugsRoute = new Hono<{ Variables: authVariables }>()
 
     return c.json({ success: true, data: formattedDrugs as drugsTable[] });
   })
-
   .get("/search", async (c) => {
     const user = c.get("user");
     if (!user)
@@ -123,7 +122,6 @@ export const drugsRoute = new Hono<{ Variables: authVariables }>()
 
     return c.json({ success: true, data: x });
   })
-
   //agregar
   .post("/", zValidator("json", drugsSchema), async (c) => {
     const user = c.get("user");
@@ -138,22 +136,21 @@ export const drugsRoute = new Hono<{ Variables: authVariables }>()
         401
       );
 
+    const doctorId = await doctorIdentification(user.id, user.role);
+    if (!doctorId) {
+      return c.json({ success: false, error: "No autorizado" }, 401);
+    }
+
     const data = c.req.valid("json");
 
     try {
-      const doctor = await db
-        .select()
-        .from(Doctors)
-        .where(eq(Doctors.userId, user.id))
-        .limit(1);
-
       const find = await db
         .select()
         .from(Drugs)
         .where(
           and(
-            eq(Drugs.tradeName, data.tradeName.toLowerCase()),
-            eq(Drugs.doctorId, doctor[0].id)
+            eq(Drugs.tradeName, formatText(data.tradeName)),
+            eq(Drugs.doctorId, doctorId)
           )
         );
       if (find.length > 0)
@@ -165,9 +162,9 @@ export const drugsRoute = new Hono<{ Variables: authVariables }>()
       const result = await db
         .insert(Drugs)
         .values({
-          genericName: data.genericName?.toLowerCase(),
-          tradeName: data.tradeName.toLowerCase(),
-          doctorId: doctor[0].id,
+          genericName: data.genericName && formatText(data.genericName),
+          tradeName: formatText(data.tradeName),
+          doctorId: doctorId,
           presentations: data.presentations,
         })
         .returning({
@@ -186,7 +183,6 @@ export const drugsRoute = new Hono<{ Variables: authVariables }>()
       );
     }
   })
-
   //actualizar presentaciones  FALTA
   .patch("/:id", zValidator("json", drugsSchema), async (c) => {
     const user = c.get("user");
@@ -230,17 +226,29 @@ export const drugsRoute = new Hono<{ Variables: authVariables }>()
 
     return c.json({ success: true, error: null });
   })
-
-  //estado falta usar el id del doctor
+  //change status
   .patch("/change/:id", async (c) => {
     const user = c.get("user");
     if (!user) return c.json({ success: false, error: "No autorizado" }, 401);
     if (user.role !== "DOCTOR")
       return c.json({ success: false, error: "No autorizado" }, 401);
 
+    const doctorId = await doctorIdentification(user.id, user.role);
+    if (!doctorId) {
+      return c.json({ success: false, error: "No autorizado" }, 401);
+    }
+
     try {
       const id = c.req.param("id");
+      if (!id) return c.json({ success: false, error: "No id provided" }, 500);
       const drug = await db.select().from(Drugs).where(eq(Drugs.id, id));
+
+      if (drug.length === 0)
+        return c.json({ success: false, error: "No se encontro" }, 500);
+
+      if (drug[0].doctorId !== doctorId)
+        return c.json({ success: false, error: "No autorizado" }, 401);
+
       await db
         .update(Drugs)
         .set({ status: !drug[0].status })
@@ -251,4 +259,42 @@ export const drugsRoute = new Hono<{ Variables: authVariables }>()
       console.log(e);
       return c.json({ success: false, error: "Ocurrió un error" }, 500);
     }
+  })
+  //delete drug
+  .delete("/:id", async (c) => {
+    const user = c.get("user");
+    if (!user) return c.json({ success: false, error: "No autorizado" }, 401);
+    if (user.role !== "DOCTOR")
+      return c.json({ success: false, error: "No autorizado" }, 401);
+
+    const doctorId = await doctorIdentification(user.id, user.role);
+    if (!doctorId) {
+      return c.json({ success: false, error: "No autorizado" }, 401);
+    }
+    const id = c.req.param("id");
+    if (!id) return c.json({ success: false, error: "No id provided" }, 500);
+
+    const drug = await db.select().from(Drugs).where(eq(Drugs.id, id));
+
+    if (drug.length === 0)
+      return c.json({ success: false, error: "No se encontro" }, 500);
+
+    if (drug[0].doctorId !== doctorId)
+      return c.json({ success: false, error: "No autorizado" }, 401);
+
+    //evaluar si el medicamento no ha sido usado
+
+    const details = await db
+      .select()
+      .from(PrescriptionsDetails)
+      .where(eq(PrescriptionsDetails.drugId, id));
+    if (details.length > 0)
+      return c.json({ success: false, error: "No se puede borrar" }, 500);
+
+    await db.delete(Drugs).where(eq(Drugs.id, id));
+    return c.json({ success: true, error: null });
   });
+
+function formatText(text: string): string {
+  return text.trim().replace(/\s+/g, " ").toLowerCase();
+}

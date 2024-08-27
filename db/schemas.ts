@@ -153,6 +153,7 @@ export const Queries = pgTable("queries", {
     .references(() => Dates.id),
   price: doublePrecision("price").default(0),
   userChargeId: uuid("userChargeId"),
+  conciliated: boolean("conciliated").default(false),
   emergency: boolean("emergency").default(false),
   doctorId: uuid("doctorId")
     .notNull()

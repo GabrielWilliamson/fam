@@ -113,10 +113,13 @@ CREATE TABLE IF NOT EXISTS "queries" (
 	"history" text,
 	"observations" text,
 	"diag" text,
+	"status" text,
 	"dateId" uuid NOT NULL,
 	"price" double precision DEFAULT 0,
+	"userChargeId" uuid,
+	"conciliated" boolean DEFAULT false,
 	"emergency" boolean DEFAULT false,
-	"doctorsId" uuid NOT NULL,
+	"doctorId" uuid NOT NULL,
 	"createdAt" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
@@ -232,7 +235,7 @@ EXCEPTION
 END $$;
 --> statement-breakpoint
 DO $$ BEGIN
- ALTER TABLE "queries" ADD CONSTRAINT "queries_doctorsId_doctors_id_fk" FOREIGN KEY ("doctorsId") REFERENCES "public"."doctors"("id") ON DELETE no action ON UPDATE no action;
+ ALTER TABLE "queries" ADD CONSTRAINT "queries_doctorId_doctors_id_fk" FOREIGN KEY ("doctorId") REFERENCES "public"."doctors"("id") ON DELETE no action ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;

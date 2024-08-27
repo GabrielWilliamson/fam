@@ -9,7 +9,7 @@ import {
   Prescriptions,
   Queries,
 } from "../db/schemas";
-import { eq, and, isNull, desc } from "drizzle-orm";
+import { eq, and, isNull, desc, ne, sum } from "drizzle-orm";
 import { zValidator } from "@hono/zod-validator";
 import {
   antropometricsSchema,
@@ -717,11 +717,15 @@ export const queriesRoute = new Hono<{ Variables: authVariables }>()
     //define cost and paiment status
     //save status as end
 
-    await db.update(Queries).set({
-      price: data.price,
-      status: "end",
-      userChargeId: data.pay ? user.id : null,
-    });
+    await db
+      .update(Queries)
+      .set({
+        price: data.price,
+        status: "end",
+        userChargeId: data.pay ? user.id : null,
+        conciliated: data.pay ? true : false,
+      })
+      .where(eq(Queries.id, querieId));
 
     //change status in dates table
     await db
@@ -731,16 +735,10 @@ export const queriesRoute = new Hono<{ Variables: authVariables }>()
 
     return c.json({ success: true, error: null }, 200);
   })
-  //for the assistant
-  .get("/collected", async (c) => {
-    return c.json({ success: true, error: null, data: null }, 200);
-  })
-  //list queries charges for the assistant
-  //pendientes no han sido cobradas
-  .get("/earrings", async (c) => {
+  .patch("/charge/:querieId", async (c) => {
     const user = c.get("user");
     if (!user) return c.json({ success: false, error: "No autorizado" }, 401);
-    if (user.role != "DOCTOR")
+    if (user.role === "ADMIN")
       return c.json({ success: false, error: "No autorizado" }, 401);
 
     const doctorId = await doctorIdentification(user.id, user.role);
@@ -748,11 +746,129 @@ export const queriesRoute = new Hono<{ Variables: authVariables }>()
     if (!doctorId)
       return c.json({ success: false, error: "No autorizado" }, 401);
 
+    const querieId = c.req.param("querieId");
+    if (!querieId)
+      return c.json({ success: false, error: "El id es requerido" }, 500);
+
+    //find querie
+    const queryFind = await db
+      .select({
+        doctorId: Queries.doctorId,
+      })
+      .from(Queries)
+      .where(and(eq(Queries.id, querieId), eq(Queries.status, "end")));
+
+    //check the doctor has access to the query
+
+    if (queryFind.length === 0)
+      return c.json({ success: false, error: "No existe la consulta" }, 500);
+
+    if (queryFind[0].doctorId !== doctorId) {
+      return c.json({ success: false, error: "No autorizado" }, 401);
+    }
+
+    //save to pait query
+
+    await db
+      .update(Queries)
+      .set({ userChargeId: user.id })
+      .where(eq(Queries.id, querieId));
+
+    return c.json({ success: true, error: null }, 200);
+  })
+  //for the assistant
+  //this not conciliated
+  .get("/collected", async (c) => {
+    const user = c.get("user");
+    if (!user)
+      return c.json(
+        { success: false, error: "No autorizado", data: null, sum:null },
+        401
+      );
+    if (user.role === "ADMIN")
+      return c.json(
+        { success: false, error: "No autorizado", data: null, sum:null },
+        401
+      );
+
+    const doctorId = await doctorIdentification(user.id, user.role);
+
+    if (!doctorId)
+      return c.json(
+        { success: false, error: "No autorizado", data: null, sum:null },
+        401
+      );
+
     const queries = await db
       .select({
         id: Queries.id,
-        price: Queries.price,
         patientName: Patients.name,
+        emergency: Queries.emergency,
+        date: Queries.createdAt,
+        price: Queries.price,
+      })
+      .from(Queries)
+      .innerJoin(Files, eq(Files.id, Queries.idFile))
+      .innerJoin(Patients, eq(Patients.id, Files.patientId))
+      .where(
+        and(
+          eq(Queries.doctorId, doctorId),
+          ne(Queries.userChargeId, user.id),
+          eq(Queries.status, "end"),
+          eq(Queries.conciliated, false)
+        )
+      );
+
+    const result = await db
+      .select({
+        totalPrice: sum(Queries.price), // Sum the prices
+      })
+      .from(Queries)
+      .innerJoin(Files, eq(Files.id, Queries.idFile))
+      .innerJoin(Patients, eq(Patients.id, Files.patientId))
+      .where(
+        and(
+          eq(Queries.doctorId, doctorId),
+          ne(Queries.userChargeId, user.id),
+          eq(Queries.status, "end"),
+          eq(Queries.conciliated, false)
+        )
+      );
+      const totalPrice = result[0]?.totalPrice ?? 0;
+    
+
+    return c.json({ success: true, error: null, data: queries, sum: totalPrice }, 200);
+  })
+  //list queries charges for the assistant
+  //pendientes no han sido cobradas
+  .get("/earrings", async (c) => {
+    const user = c.get("user");
+    if (!user)
+      return c.json(
+        { success: false, error: "No autorizado", data: null },
+        401
+      );
+    if (user.role === "ADMIN")
+      return c.json(
+        { success: false, error: "No autorizado", data: null },
+        401
+      );
+
+    const doctorId = await doctorIdentification(user.id, user.role);
+
+    if (!doctorId)
+      return c.json(
+        { success: false, error: "No autorizado", data: null },
+        401
+      );
+
+    const queries = await db
+      .select({
+        id: Queries.id,
+        patientName: Patients.name,
+        emergency: Queries.emergency,
+        date: Queries.createdAt,
+        price: Queries.price,
       })
       .from(Queries)
       .innerJoin(Files, eq(Files.id, Queries.idFile))
@@ -764,18 +880,30 @@ export const queriesRoute = new Hono<{ Variables: authVariables }>()
           isNull(Queries.userChargeId)
         )
       );
+
+    return c.json({ success: true, error: null, data: queries }, 200);
   })
   //list queries where process
   .get("/process", async (c) => {
     const user = c.get("user");
-    if (!user) return c.json({ success: false, error: "No autorizado" }, 401);
+    if (!user)
+      return c.json(
+        { success: false, error: "No autorizado", data: null },
+        401
+      );
     if (user.role === "ADMIN")
-      return c.json({ success: false, error: "No autorizado" }, 401);
+      return c.json(
+        { success: false, error: "No autorizado", data: null },
+        401
+      );
 
     const doctorId = await doctorIdentification(user.id, user.role);
 
     if (!doctorId)
-      return c.json({ success: false, error: "No autorizado" }, 401);
+      return c.json(
+        { success: false, error: "No autorizado", data: null },
+        401
+      );
 
     const queries = await db
       .select({
@@ -793,7 +921,7 @@ export const queriesRoute = new Hono<{ Variables: authVariables }>()
     return c.json({ success: true, error: null, data: queries }, 200);
   })
 
-  .get("/recents", async (c) => {
+  .get("/recent", async (c) => {
     const user = c.get("user");
     if (!user)
       return c.json(
