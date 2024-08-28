@@ -13,7 +13,9 @@ END $$;
 CREATE TABLE IF NOT EXISTS "assistants" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"userId" uuid NOT NULL,
-	"amount" double precision DEFAULT 0 NOT NULL
+	"change" double precision DEFAULT 0 NOT NULL,
+	"total" double precision DEFAULT 0 NOT NULL,
+	"expences" json
 );
 --> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "dates" (
@@ -30,11 +32,10 @@ CREATE TABLE IF NOT EXISTS "doctors" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"userId" uuid NOT NULL,
 	"credential" text,
-	"skils" json,
+	"socials" json,
 	"assistantId" uuid,
 	"specialtie" "specialties" DEFAULT 'GENERAL' NOT NULL,
 	"createdAt" timestamp DEFAULT now() NOT NULL,
-	"updatedAt" timestamp DEFAULT now() NOT NULL,
 	CONSTRAINT "doctors_credential_unique" UNIQUE("credential")
 );
 --> statement-breakpoint
@@ -116,8 +117,7 @@ CREATE TABLE IF NOT EXISTS "queries" (
 	"status" text,
 	"dateId" uuid NOT NULL,
 	"price" double precision DEFAULT 0,
-	"userChargeId" uuid,
-	"conciliated" boolean DEFAULT false,
+	"collector" uuid,
 	"emergency" boolean DEFAULT false,
 	"doctorId" uuid NOT NULL,
 	"createdAt" timestamp DEFAULT now() NOT NULL

@@ -37,7 +37,7 @@ export const servicesRoute = new Hono<{ Variables: authVariables }>()
     await db
       .update(Assistants)
       .set({
-        amount: sql`${Assistants.amount} + ${data.amount}`,
+        change: sql`${Assistants.change} + ${data.amount}`,
       })
       .where(eq(Assistants.id, assistant[0].assistantId));
 
@@ -46,42 +46,29 @@ export const servicesRoute = new Hono<{ Variables: authVariables }>()
 
   .get("/money", async (c) => {
     const user = c.get("user");
-    if (!user)
-      return c.json({ success: false, change: null, total: null }, 401);
+    if (!user) return c.json({ success: false, data: null }, 401);
     if (user.role !== "ASSISTANT")
-      return c.json({ success: false, change: null, total: null }, 401);
+      return c.json({ success: false, data: null }, 401);
 
     const doctorId = await doctorIdentification(user.id, user.role);
     if (!doctorId) {
-      return c.json({ success: false, change: null, total: null }, 401);
+      return c.json({ success: false, data: null }, 401);
     }
 
     const data = await db
       .select({
-        change: Assistants.amount,
+        change: Assistants.change,
+        total: Assistants.total,
+        expences: Assistants.expences,
       })
       .from(Assistants)
       .where(eq(Assistants.userId, user.id));
 
-    //efectivo actual
-    const result = await db
-      .select({
-        totalPrice: sum(Queries.price),
-      })
-      .from(Queries)
-      .where(
-        and(
-          eq(Queries.doctorId, doctorId),
-          eq(Queries.status, "end"),
-          eq(Queries.userChargeId, user.id),
-          eq(Queries.conciliated, false)
-        )
-      );
+    const total = data[0]?.total ?? 0;
+    const expences = data[0]?.expences ?? {};
+    const change = data[0]?.change ?? 0;
 
-    console.log(result);
-
-    const totalPrice = result[0]?.totalPrice ?? 0;
-    return c.json({ success: true, change: data[0].change ?? 0, total: totalPrice });
+    return c.json({ success: true, data: { total, expences, change } });
   })
 
   //get info services
@@ -108,7 +95,7 @@ export const servicesRoute = new Hono<{ Variables: authVariables }>()
     if (!assistantId) return c.json({ success: false, data: null }, 401);
 
     const assistant = await db
-      .select({ amount: Assistants.amount, name: Users.name })
+      .select({ change: Assistants.change, name: Users.name })
       .from(Assistants)
       .innerJoin(Users, eq(Assistants.userId, Users.id))
       .where(eq(Assistants.id, assistantId));

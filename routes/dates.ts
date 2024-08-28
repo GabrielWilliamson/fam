@@ -4,7 +4,7 @@ import { Dates, Patients } from "../db/schemas";
 import { db } from "../db/db";
 import doctorIdentification from "../lib/doctorIdentification";
 import { dateSchema } from "../schemas/dateSchema";
-import { and, or, lte, gte, eq } from "drizzle-orm/expressions";
+import { and, or, lte, gte, eq, asc, inArray } from "drizzle-orm/expressions";
 
 export const datesRoute = new Hono<{ Variables: authVariables }>()
 
@@ -68,9 +68,11 @@ export const datesRoute = new Hono<{ Variables: authVariables }>()
       .where(
         and(
           eq(Dates.doctorId, doctorId),
+          eq(Dates.status, "scheduled"),
           and(gte(Dates.start, today), lte(Dates.end, tomorrow))
         )
-      );
+      )
+      .orderBy(asc(Dates.start));
 
     const adjustedResults = currentDates.map((event: any) => {
       const adjustedEnd = new Date(event.end);
@@ -97,7 +99,6 @@ export const datesRoute = new Hono<{ Variables: authVariables }>()
     const result = dateSchema.safeParse(body);
     if (!result.success) return c.json({ success: false, error: result.error });
 
-    
     const { start, end, date, patient } = result.data;
 
     // Convertir la fecha de inicio
@@ -125,6 +126,7 @@ export const datesRoute = new Hono<{ Variables: authVariables }>()
       where: (dates) =>
         and(
           eq(dates.doctorId, doctorId),
+          inArray(dates.status, ["scheduled", "process"]),
           or(
             and(
               lte(dates.start, refineEnd), // La cita existente empieza antes que la nueva termine

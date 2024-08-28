@@ -37,9 +37,7 @@ export const prescriptionsRoute = new Hono<{ Variables: authVariables }>()
         const findQuery = await db
           .select()
           .from(Queries)
-          .where(
-            and(eq(Queries.id, querieId), eq(Queries.doctorId, doctorId))
-          );
+          .where(and(eq(Queries.id, querieId), eq(Queries.doctorId, doctorId)));
 
         if (!findQuery[0])
           return c.json({ success: false, error: "No autorizado" }, 401);
@@ -112,7 +110,6 @@ export const prescriptionsRoute = new Hono<{ Variables: authVariables }>()
       if (!querieId)
         return c.json({ success: false, error: "El id es requerido" }, 500);
 
-      
       const doctorId = await doctorIdentification(user.id, user.role);
       if (!doctorId)
         return c.json({ success: false, error: "No autorizado" }, 401);
@@ -124,9 +121,7 @@ export const prescriptionsRoute = new Hono<{ Variables: authVariables }>()
           })
           .from(Queries)
           .innerJoin(Prescriptions, eq(Prescriptions.querieId, Queries.id))
-          .where(
-            and(eq(Queries.id, querieId), eq(Queries.doctorId, doctorId))
-          );
+          .where(and(eq(Queries.id, querieId), eq(Queries.doctorId, doctorId)));
 
         if (!findQuery[0])
           return c.json({ success: false, error: "No autorizado" }, 401);
@@ -139,7 +134,7 @@ export const prescriptionsRoute = new Hono<{ Variables: authVariables }>()
           );
 
         // Iterate over each prescription detail
-        for (const element of details) {          
+        for (const element of details) {
           const search = await db
             .select()
             .from(Drugs)
@@ -198,7 +193,7 @@ export const prescriptionsRoute = new Hono<{ Variables: authVariables }>()
 
     const query = c.req.query("q");
     if (!query)
-      return c.json({ exist: null, error: "id requerido", data: null }, 401);
+      return c.json({ exist: null, error: "id requerido", data: null }, 500);
 
     const prescription = await db
       .select({
@@ -229,10 +224,10 @@ export const prescriptionsRoute = new Hono<{ Variables: authVariables }>()
         .where(eq(PrescriptionsDetails.prescriptionId, prescription[0].id));
 
       return c.json(
-        { exist: true, data: result as detail[], error: null },
+        { exist: true, error: null, data: result as detail[] },
         200
       );
     } else {
-      return c.json({ exist: false, error: null, data: null }, 401);
+      return c.json({ exist: false, error: null, data: [] }, 200);
     }
   });

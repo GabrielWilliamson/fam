@@ -1,5 +1,5 @@
 {
-  "id": "0abc40e9-08be-4e72-9506-914ab4bd6796",
+  "id": "7cc60b61-719f-424d-9fdd-e136be88c44b",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -21,12 +21,25 @@
           "primaryKey": false,
           "notNull": true
         },
-        "amount": {
-          "name": "amount",
+        "change": {
+          "name": "change",
           "type": "double precision",
           "primaryKey": false,
           "notNull": true,
           "default": 0
+        },
+        "total": {
+          "name": "total",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "expences": {
+          "name": "expences",
+          "type": "json",
+          "primaryKey": false,
+          "notNull": false
         }
       },
       "indexes": {},
@@ -152,8 +165,8 @@
           "primaryKey": false,
           "notNull": false
         },
-        "skils": {
-          "name": "skils",
+        "socials": {
+          "name": "socials",
           "type": "json",
           "primaryKey": false,
           "notNull": false
@@ -174,13 +187,6 @@
         },
         "createdAt": {
           "name": "createdAt",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        },
-        "updatedAt": {
-          "name": "updatedAt",
           "type": "timestamp",
           "primaryKey": false,
           "notNull": true,
@@ -745,18 +751,11 @@
           "notNull": false,
           "default": 0
         },
-        "userChargeId": {
-          "name": "userChargeId",
+        "collector": {
+          "name": "collector",
           "type": "uuid",
           "primaryKey": false,
           "notNull": false
-        },
-        "conciliated": {
-          "name": "conciliated",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": false,
-          "default": false
         },
         "emergency": {
           "name": "emergency",
