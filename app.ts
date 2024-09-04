@@ -4,7 +4,6 @@ import { serveStatic } from "@hono/node-server/serve-static";
 import { logger } from "hono/logger";
 import { authMiddleware } from "./auth/midleware";
 import type { authVariables } from "./types/auth";
-
 import { route } from "./routes/index";
 
 const {
@@ -19,7 +18,8 @@ const {
   fileRoute,
   prescriptionsRoute,
   mediaRoute,
-  servicesRoute
+  servicesRoute,
+  helpsRoute
 } = route;
 
 import dotenv from "dotenv";
@@ -33,6 +33,7 @@ app.use("*", authMiddleware);
 
 const routes = app
   .basePath("/api")
+  .route("/helps", helpsRoute)
   .route("/drugs", drugsRoute)
   .route("/auth", authRoute)
   .route("/users", usersRoute)

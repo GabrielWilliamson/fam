@@ -48,3 +48,28 @@ export default async function doctorIdentification(
 
   return doctorId;
 }
+
+export async function assistantIdentification(
+  role: string,
+  userId: string
+): Promise<string | null> {
+  if (role === "DOCTOR") {
+    const result = await db
+      .select({
+        assistantId: Doctors.assistantId,
+      })
+      .from(Doctors)
+      .where(eq(Doctors.userId, userId));
+
+    return result ? result[0].assistantId : null;
+  }
+  if (role === "ASSISTANT") {
+    const result = await db
+      .select({
+        assistantId: Assistants.id,
+      })
+      .from(Assistants)
+      .where(eq(Assistants.userId, userId));
+    return result ? result[0].assistantId : null;
+  } else return null;
+}

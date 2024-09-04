@@ -45,6 +45,7 @@ export const Doctors = pgTable("doctors", {
   credential: text("credential").unique(),
   socials: json("socials"),
   assistantId: uuid("assistantId"),
+  rate: doublePrecision("rate").notNull().default(0),
   specialtie: Specialties("specialtie").default("GENERAL").notNull(),
   createdAt: timestamp("createdAt").notNull().defaultNow(),
 });

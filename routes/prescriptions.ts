@@ -10,7 +10,7 @@ import { eq, and, exists } from "drizzle-orm";
 import type { authVariables } from "../types/auth";
 import { Hono } from "hono";
 import { zValidator } from "@hono/zod-validator";
-import doctorIdentification from "../lib/doctorIdentification";
+import doctorIdentification from "../lib/identification";
 import type { detail } from "../schemas/prescriptionSchema";
 export const prescriptionsRoute = new Hono<{ Variables: authVariables }>()
 

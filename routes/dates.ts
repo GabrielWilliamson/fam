@@ -2,7 +2,7 @@ import { Hono } from "hono";
 import type { authVariables } from "../types/auth";
 import { Dates, Patients } from "../db/schemas";
 import { db } from "../db/db";
-import doctorIdentification from "../lib/doctorIdentification";
+import doctorIdentification from "../lib/identification";
 import { dateSchema } from "../schemas/dateSchema";
 import { and, or, lte, gte, eq, asc, inArray } from "drizzle-orm/expressions";
 

@@ -10,6 +10,7 @@ import { fileRoute } from "./file";
 import { prescriptionsRoute } from "./prescriptions";
 import { mediaRoute } from "./media";
 import { servicesRoute } from "./services";
+import { helpsRoute } from "./helps";
 
 export const route = {
   drugsRoute,
@@ -23,5 +24,6 @@ export const route = {
   fileRoute,
   mediaRoute,
   prescriptionsRoute,
-  servicesRoute
+  servicesRoute,
+  helpsRoute
 };

@@ -6,7 +6,7 @@ import CryptoHasher from "bun";
 import { db } from "../db/db";
 import { Files, Patients, Queries } from "../db/schemas";
 import { and, eq } from "drizzle-orm";
-import doctorIdentification from "../lib/doctorIdentification";
+import doctorIdentification from "../lib/identification";
 import type { resource } from "../types/queries";
 import {
   getSignedUrl,
@@ -67,12 +67,23 @@ export const mediaRoute = new Hono<{ Variables: authVariables }>()
 
     //veryfying file types
     const accept = [
-      "sheet",
+      // PDF
       "application/pdf",
+  
+      // Imágenes
       "image/jpeg",
       "image/png",
       "image/webp",
-      "application/msword",
+  
+      // Word
+      "application/msword", // .doc
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document", // .docx
+  
+      // Excel
+      "application/vnd.ms-excel", // .xls
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", // .xlsx
+      "application/vnd.ms-excel.sheet.binary.macroEnabled.12", // .xlsb
+      "application/vnd.ms-excel.sheet.macroEnabled.12", // .xlsm
     ];
 
     const ready = files.every((file) => {

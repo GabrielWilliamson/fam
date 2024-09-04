@@ -22,7 +22,7 @@ import {
   transformAddress,
   transformOrigin,
 } from "../lib/patients";
-import doctorIdentification from "../lib/doctorIdentification";
+import doctorIdentification from "../lib/identification";
 import type { z } from "zod";
 import { departmentsFull } from "../lib/locations";
 

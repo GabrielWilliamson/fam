@@ -7,7 +7,7 @@ import { Doctors, Drugs, PrescriptionsDetails, Users } from "../db/schemas";
 import { db } from "../db/db";
 import { and, eq, or, sql } from "drizzle-orm";
 import errorMap from "zod/locales/en.js";
-import doctorIdentification from "../lib/doctorIdentification";
+import doctorIdentification from "../lib/identification";
 import type { drugSearch } from "../types/drugs";
 
 export const drugsRoute = new Hono<{ Variables: authVariables }>()

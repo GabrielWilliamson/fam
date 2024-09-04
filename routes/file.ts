@@ -5,7 +5,7 @@ import { RelativeSchema } from "../schemas/relativeSchema";
 import { db } from "../db/db";
 import { Files, Patients, Relatives } from "../db/schemas";
 import { eq } from "drizzle-orm";
-import doctorIdentification from "../lib/doctorIdentification";
+import doctorIdentification from "../lib/identification";
 import { hereditarySchema, infectoSchema } from "../schemas/fileSchema";
 import {
   alcoholSchema,

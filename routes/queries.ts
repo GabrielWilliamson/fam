@@ -10,7 +10,7 @@ import {
   Prescriptions,
   Queries,
 } from "../db/schemas";
-import { eq, and, isNull, desc, ne, sum, sql } from "drizzle-orm";
+import { eq, and, isNull, desc, ne, sum, sql, isNotNull } from "drizzle-orm";
 import { zValidator } from "@hono/zod-validator";
 import {
   antropometricsSchema,
@@ -24,7 +24,7 @@ import {
   priceSchema,
   toraxSchema,
 } from "../schemas/querieSchema";
-import doctorIdentification from "../lib/doctorIdentification";
+import doctorIdentification from "../lib/identification";
 import { genSalt } from "bcryptjs";
 import type { querieBase } from "../types/queries";
 import { z } from "zod";
@@ -863,6 +863,48 @@ export const queriesRoute = new Hono<{ Variables: authVariables }>()
         )
       );
 
+    return c.json({ success: true, error: null, data: queries }, 200);
+  })
+  //collect for the assistant
+  .get("/collected", async (c) => {
+    const user = c.get("user");
+    if (!user)
+      return c.json(
+        { success: false, error: "No autorizado", data: null },
+        401
+      );
+    if (user.role !== "DOCTOR")
+      return c.json(
+        { success: false, error: "No autorizado", data: null },
+        401
+      );
+
+    const doctorId = await doctorIdentification(user.id, user.role);
+
+    if (!doctorId)
+      return c.json(
+        { success: false, error: "No autorizado", data: null },
+        401
+      );
+
+    const queries = await db
+      .select({
+        id: Queries.id,
+        patientName: Patients.name,
+        emergency: Queries.emergency,
+        date: Queries.createdAt,
+        price: Queries.price,
+      })
+      .from(Queries)
+      .innerJoin(Files, eq(Files.id, Queries.idFile))
+      .innerJoin(Patients, eq(Patients.id, Files.patientId))
+      .where(
+        and(
+          eq(Queries.doctorId, doctorId),
+          eq(Queries.status, "end"),
+          ne(Queries.collector, user.id)
+        )
+      );
     return c.json({ success: true, error: null, data: queries }, 200);
   })
   //list queries where process

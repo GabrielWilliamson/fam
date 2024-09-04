@@ -16,7 +16,8 @@ export const interrogationSchema = z.object({
   interrogation: z.string().max(700, { message: "Máximo 700 caracteres" }),
 });
 export const priceSchema = z.object({
-  price: z.number().positive(),
+  price: z.number().min(200, "El precio debe ser mayor o igual a C$ 200.00"),
+
   pay: z.boolean().default(false),
 });
 

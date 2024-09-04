@@ -294,6 +294,6 @@ export const authRoute = new Hono<{ Variables: authVariables }>()
     const session = c.get("session");
     if (!session) return c.json({ success: false, data: null }, 401);
     const secretKey = process.env.JWT_SECRET!;
-    const token = jwt.sign({ data: session }, secretKey);
+    const token = jwt.sign({ data: session }, secretKey, {expiresIn: "20m"});
     return c.json({ data: token });
   });
