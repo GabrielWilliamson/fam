@@ -4,34 +4,17 @@ import { mkdir } from "node:fs/promises";
 import path from "path";
 import CryptoHasher from "bun";
 import { db } from "../db/db";
-import { Files, Patients, Queries } from "../db/schemas";
-import { and, eq } from "drizzle-orm";
+import { Patients, Queries } from "../db/schemas";
+import { eq } from "drizzle-orm";
 import doctorIdentification from "../lib/identification";
-import type { resource } from "../types/queries";
-import {
-  getSignedUrl,
-  S3RequestPresigner,
-} from "@aws-sdk/s3-request-presigner";
 import {
   DeleteObjectCommand,
-  GetObjectAclCommand,
-  GetObjectCommand,
-  PutObjectCommand,
   S3Client,
 } from "@aws-sdk/client-s3";
+import { getResource, getResources, saveIdResources, upload } from "../lib/store";
 
-const region = process.env.AWS_BUCKET_REGION!;
-const bucketName = process.env.AWS_BUCKET_NAME!;
-const accessKeyId = process.env.AWS_ACCESS_KEY!;
-const secretAccessKey = process.env.AWS_SECRET_ACCESS_KEY!;
 
-export const s3 = new S3Client({
-  region: region,
-  credentials: {
-    accessKeyId: accessKeyId,
-    secretAccessKey: secretAccessKey,
-  },
-});
+
 
 export const mediaRoute = new Hono<{ Variables: authVariables }>()
 
@@ -69,16 +52,16 @@ export const mediaRoute = new Hono<{ Variables: authVariables }>()
     const accept = [
       // PDF
       "application/pdf",
-  
+
       // Imágenes
       "image/jpeg",
       "image/png",
       "image/webp",
-  
+
       // Word
       "application/msword", // .doc
       "application/vnd.openxmlformats-officedocument.wordprocessingml.document", // .docx
-  
+
       // Excel
       "application/vnd.ms-excel", // .xls
       "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", // .xlsx
@@ -119,81 +102,81 @@ export const mediaRoute = new Hono<{ Variables: authVariables }>()
     }
   })
   //borrar un recurso de la consulta
-  .delete("/resources/:queryId/:resourceId", async (c) => {
-    const user = c.get("user");
-    if (!user)
-      return c.json(
-        { error: "No se encontro el usuario", success: false },
-        401
-      );
-    if (user.role !== "DOCTOR")
-      return c.json({ error: "No autorizado", success: false }, 401);
+  // .delete("/resources/:queryId/:resourceId", async (c) => {
+  //   const user = c.get("user");
+  //   if (!user)
+  //     return c.json(
+  //       { error: "No se encontro el usuario", success: false },
+  //       401
+  //     );
+  //   if (user.role !== "DOCTOR")
+  //     return c.json({ error: "No autorizado", success: false }, 401);
 
-    const doctorId = await doctorIdentification(user.id, user.role);
-    if (!doctorId)
-      return c.json({ error: "No autorizado", success: false }, 401);
+  //   const doctorId = await doctorIdentification(user.id, user.role);
+  //   if (!doctorId)
+  //     return c.json({ error: "No autorizado", success: false }, 401);
 
-    const queryId = c.req.param("queryId");
-    if (!queryId)
-      return c.json({ error: "No se encontro el query", success: false }, 400);
+  //   const queryId = c.req.param("queryId");
+  //   if (!queryId)
+  //     return c.json({ error: "No se encontro el query", success: false }, 400);
 
-    const resourceId = c.req.param("resourceId");
-    if (!resourceId)
-      return c.json({ error: "No se encontro el id", success: false }, 400);
+  //   const resourceId = c.req.param("resourceId");
+  //   if (!resourceId)
+  //     return c.json({ error: "No se encontro el id", success: false }, 400);
 
-    const input = {
-      Bucket: bucketName,
-      Key: resourceId,
-    };
-    const command = new DeleteObjectCommand(input);
+  //   const input = {
+  //     Bucket: bucketName,
+  //     Key: resourceId,
+  //   };
+  //   const command = new DeleteObjectCommand(input);
 
-    try {
-      const s3 = new S3Client({
-        region: region,
-        credentials: {
-          accessKeyId: accessKeyId,
-          secretAccessKey: secretAccessKey,
-        },
-      });
-      await s3.send(command);
+  //   try {
+  //     const s3 = new S3Client({
+  //       region: region,
+  //       credentials: {
+  //         accessKeyId: accessKeyId,
+  //         secretAccessKey: secretAccessKey,
+  //       },
+  //     });
+  //     await s3.send(command);
 
-      // Obtener los recursos actuales desde la base de datos
-      const currentResources = await db
-        .select({
-          resources: Queries.resources,
-        })
-        .from(Queries)
-        .where(eq(Queries.id, queryId));
+  //     // Obtener los recursos actuales desde la base de datos
+  //     const currentResources = await db
+  //       .select({
+  //         resources: Queries.resources,
+  //       })
+  //       .from(Queries)
+  //       .where(eq(Queries.id, queryId));
 
-      if (!currentResources || currentResources.length === 0) {
-        return c.json(
-          { error: "No se encontraron recursos", success: false },
-          404
-        );
-      }
+  //     if (!currentResources || currentResources.length === 0) {
+  //       return c.json(
+  //         { error: "No se encontraron recursos", success: false },
+  //         404
+  //       );
+  //     }
 
-      // Filtrar el recurso que se debe eliminar del array
-      const newResources = currentResources[0].resources?.filter(
-        (resource) => resource.split(".")[0] !== resourceId
-      );
+  //     // Filtrar el recurso que se debe eliminar del array
+  //     const newResources = currentResources[0].resources?.filter(
+  //       (resource) => resource.split(".")[0] !== resourceId
+  //     );
 
-      console.log(newResources, "esto estamos guardando");
+  //     console.log(newResources, "esto estamos guardando");
 
-      // Actualizar los recursos en la base de datos
-      await db
-        .update(Queries)
-        .set({ resources: newResources })
-        .where(eq(Queries.id, queryId));
+  //     // Actualizar los recursos en la base de datos
+  //     await db
+  //       .update(Queries)
+  //       .set({ resources: newResources })
+  //       .where(eq(Queries.id, queryId));
 
-      return c.json({ error: "", success: true });
-    } catch (e) {
-      console.log("error deleting file");
-      return c.json(
-        { error: "Error al borrar el archivo", success: false },
-        500
-      );
-    }
-  })
+  //     return c.json({ error: "", success: true });
+  //   } catch (e) {
+  //     console.log("error deleting file");
+  //     return c.json(
+  //       { error: "Error al borrar el archivo", success: false },
+  //       500
+  //     );
+  //   }
+  // })
   //obtener los recursos de la consulta
   .get("/resources/:queryId", async (c) => {
     const user = c.get("user");
@@ -305,83 +288,4 @@ export const mediaRoute = new Hono<{ Variables: authVariables }>()
 
 export default mediaRoute;
 
-async function upload(
-  arrayBuffer: ArrayBuffer,
-  name: string,
-  contentType: string
-) {
-  const uint8Array = new Uint8Array(arrayBuffer);
 
-  const params = {
-    Bucket: bucketName,
-    Body: uint8Array,
-    Key: name,
-    ContentType: contentType,
-  };
-  const command = new PutObjectCommand(params);
-
-  return s3.send(command);
-}
-
-async function saveIdResources(fileId: string, queryId: string) {
-  const [resources] = await db
-    .select({
-      currentResources: Queries.resources,
-    })
-    .from(Queries)
-    .where(eq(Queries.id, queryId));
-
-  const resourcesArray = resources.currentResources || [];
-  if (!resourcesArray.includes(fileId)) {
-    await db
-      .update(Queries)
-      .set({ resources: [...resourcesArray, fileId] })
-      .where(eq(Queries.id, queryId));
-  }
-}
-
-async function getResources(
-  list: string[]
-): Promise<{ id: string; url: string }[]> {
-  const s3 = new S3Client({
-    region: region,
-    credentials: {
-      accessKeyId: accessKeyId,
-      secretAccessKey: secretAccessKey,
-    },
-  });
-
-  const resourcePromises = list.map(async (idResource: string) => {
-    const fileId = idResource.split(".").shift() || "";
-
-    const command = new GetObjectCommand({
-      Bucket: bucketName,
-      Key: fileId,
-    });
-
-    const url = await getSignedUrl(s3, command, { expiresIn: 3600 });
-
-    return { id: idResource, url };
-  });
-
-  // Wait for all the promises to resolve
-  const resources = await Promise.all(resourcePromises);
-  return resources;
-}
-
-async function getResource(idResource: string) {
-  const s3 = new S3Client({
-    region: region,
-    credentials: {
-      accessKeyId: accessKeyId,
-      secretAccessKey: secretAccessKey,
-    },
-  });
-
-  const command = new GetObjectCommand({
-    Bucket: bucketName,
-    Key: idResource,
-  });
-
-  return await getSignedUrl(s3, command, { expiresIn: 3600 });
-}

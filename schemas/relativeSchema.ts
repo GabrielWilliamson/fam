@@ -50,8 +50,8 @@ export const RelativeSchema = z.object({
   nationality: country,
   DNI: z
     .string({ required_error: "Este campo es requerido" })
-    .max(14, { message: "Cédula incorrecta" })
-    .min(14, { message: "Cédula incorrecta" }),
+    .max(16, { message: "Cédula incorrecta" })
+    .min(16, { message: "Cédula incorrecta" }),
   relation: z.enum(relations, { required_error: "Este campo es requerido" }),
   civilStatus: z.enum(civil, { required_error: "Este campo es requerido" }),
   patientId: z.string(),

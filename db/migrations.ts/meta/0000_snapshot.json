@@ -1,5 +1,5 @@
 {
-  "id": "7cc60b61-719f-424d-9fdd-e136be88c44b",
+  "id": "46c7fcb1-03c3-452c-91e0-07cf8af64181",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -35,11 +35,19 @@
           "notNull": true,
           "default": 0
         },
-        "expences": {
-          "name": "expences",
-          "type": "json",
+        "dolars": {
+          "name": "dolars",
+          "type": "integer",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true,
+          "default": 0
+        },
+        "cordobas": {
+          "name": "cordobas",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
         }
       },
       "indexes": {},
@@ -176,6 +184,13 @@
           "type": "uuid",
           "primaryKey": false,
           "notNull": false
+        },
+        "rate": {
+          "name": "rate",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
         },
         "specialtie": {
           "name": "specialtie",
@@ -394,6 +409,67 @@
           "tableTo": "queries",
           "columnsFrom": [
             "querieId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {}
+    },
+    "public.Expences": {
+      "name": "Expences",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "description": {
+          "name": "description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "total": {
+          "name": "total",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "dollars": {
+          "name": "dollars",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cordobas": {
+          "name": "cordobas",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "assistantId": {
+          "name": "assistantId",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "Expences_assistantId_assistants_id_fk": {
+          "name": "Expences_assistantId_assistants_id_fk",
+          "tableFrom": "Expences",
+          "tableTo": "assistants",
+          "columnsFrom": [
+            "assistantId"
           ],
           "columnsTo": [
             "id"

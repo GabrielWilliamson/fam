@@ -1,6 +1,7 @@
 import { relations } from "drizzle-orm";
 import {
   boolean,
+  integer,
   doublePrecision,
   json,
   pgEnum,
@@ -47,6 +48,8 @@ export const Doctors = pgTable("doctors", {
   assistantId: uuid("assistantId"),
   rate: doublePrecision("rate").notNull().default(0),
   specialtie: Specialties("specialtie").default("GENERAL").notNull(),
+  infecto: text("infecto").array(),
+  hereditary: text("hereditary").array(),
   createdAt: timestamp("createdAt").notNull().defaultNow(),
 });
 export const DoctorRelations = relations(Doctors, ({ many, one }) => ({
@@ -63,12 +66,25 @@ export const Assistants = pgTable("assistants", {
     .references(() => Users.id),
   change: doublePrecision("change").notNull().default(0),
   total: doublePrecision("total").notNull().default(0),
-  expences: json("expences"),
+  dollars: integer("dolars").notNull().default(0),
+  cordobas: doublePrecision("cordobas").notNull().default(0),
 });
 export const AssistantRelations = relations(Assistants, ({ many, one }) => ({
   user: one(Users, { fields: [Assistants.id], references: [Users.id] }),
   doctor: one(Doctors, { fields: [Assistants.id], references: [Doctors.id] }),
+  expences: many(Expences),
 }));
+export const Expences = pgTable("Expences", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  description: text("description").notNull(),
+  total: doublePrecision("total").notNull(),
+  dollars: doublePrecision("dollars").notNull(),
+  cordobas: doublePrecision("cordobas").notNull(),
+  assistantId: uuid("assistantId")
+    .notNull()
+    .references(() => Assistants.id),
+  createdAt: timestamp("createdAt").notNull().defaultNow(),
+});
 export const Patients = pgTable("patients", {
   id: uuid("id").primaryKey().defaultRandom(),
   name: text("name").notNull(),
@@ -112,6 +128,7 @@ export const Files = pgTable("files", {
     .references(() => Patients.id),
   infecto: text("infecto").array(),
   hereditary: text("hereditary").array(),
+  apnp: json("apnp"),
   app: json("app"),
   createdAt: timestamp("createdAt").notNull().defaultNow(),
 });
@@ -150,7 +167,7 @@ export const QueriesRelations = relations(Queries, ({ one }) => ({
 export const Relatives = pgTable("relatives", {
   id: uuid("id").primaryKey().defaultRandom(),
   name: text("name").notNull(),
-  dni: text("dni").unique(),
+  dni: text("dni"),
   relation: text("relation").notNull(),
   nationality: text("nationality").notNull(),
   civilStatus: text("civilStatus").notNull(),

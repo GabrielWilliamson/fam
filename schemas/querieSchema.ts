@@ -17,8 +17,12 @@ export const interrogationSchema = z.object({
 });
 export const priceSchema = z.object({
   price: z.number().min(200, "El precio debe ser mayor o igual a C$ 200.00"),
-
   pay: z.boolean().default(false),
+});
+
+export const chargeSchema = z.object({
+  cordobas: z.number(),
+  dolares: z.number(),
 });
 
 export type price = z.infer<typeof priceSchema>;

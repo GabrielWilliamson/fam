@@ -11,6 +11,7 @@ import { prescriptionsRoute } from "./prescriptions";
 import { mediaRoute } from "./media";
 import { servicesRoute } from "./services";
 import { helpsRoute } from "./helps";
+import { docsRoute } from "./docs";
 
 export const route = {
   drugsRoute,
@@ -25,5 +26,6 @@ export const route = {
   mediaRoute,
   prescriptionsRoute,
   servicesRoute,
-  helpsRoute
+  helpsRoute,
+  docsRoute,
 };

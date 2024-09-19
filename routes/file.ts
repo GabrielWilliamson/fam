@@ -4,14 +4,24 @@ import { zValidator } from "@hono/zod-validator";
 import { RelativeSchema } from "../schemas/relativeSchema";
 import { db } from "../db/db";
 import { Files, Patients, Relatives } from "../db/schemas";
-import { eq } from "drizzle-orm";
+import { eq, and, or } from "drizzle-orm";
 import doctorIdentification from "../lib/identification";
-import { hereditarySchema, infectoSchema } from "../schemas/fileSchema";
+import { appSchema } from "../schemas/fileSchema";
+import {
+  hereditarySchema,
+  infectoSchema,
+  partoSchema,
+  fedingSchema,
+  postSchema,
+  prenatalesSchema,
+  psicoSchema,
+} from "../schemas/fileSchema";
 import {
   alcoholSchema,
   drogasSchema,
   tobacoSchema,
 } from "../schemas/generalSchema";
+import type { z } from "zod";
 
 export const fileRoute = new Hono<{ Variables: authVariables }>()
 
@@ -27,6 +37,32 @@ export const fileRoute = new Hono<{ Variables: authVariables }>()
 
     try {
       const data = c.req.valid("json");
+
+      const existingRelative = await db
+        .select({
+          phone: Relatives.phone,
+          dni: Relatives.dni,
+        })
+        .from(Relatives)
+        .where(
+          and(
+            eq(Relatives.patientId, data.patientId),
+            or(
+              eq(Relatives.dni, data.DNI),
+              eq(Relatives.phone, data.nationality.countryCode + data.phone)
+            )
+          )
+        )
+        .limit(1);
+
+      if (existingRelative.length > 0) {
+        return c.json({
+          success: false,
+          error: "Ya existe Familiar con la misma Cédula o teléfono ",
+        });
+      }
+
+      // Insertar nuevo familiar si no hay conflicto
       await db.insert(Relatives).values({
         name: data.name,
         dni: data.DNI,
@@ -37,7 +73,7 @@ export const fileRoute = new Hono<{ Variables: authVariables }>()
         nationality: data.nationality.country,
       });
 
-      return c.json({ success: true });
+      return c.json({ success: true, error: null });
     } catch (e) {
       console.log(e);
       return c.json({ success: false, error: "Ocurrió un error" }, 500);
@@ -73,9 +109,7 @@ export const fileRoute = new Hono<{ Variables: authVariables }>()
 
     return c.json({ success: true, data: ls });
   })
-
   //list diases
-
   .get("/diases", async (c) => {
     const user = c.get("user");
     if (!user) {
@@ -175,12 +209,15 @@ export const fileRoute = new Hono<{ Variables: authVariables }>()
     if (file[0].doctorId != doctorId)
       return c.json({ success: false, error: "unauthorized" });
 
-    const oldInfecto = file[0].infecto;
-    const newInfecto = [...(oldInfecto ?? []), ...data.infecto];
+    const oldInfecto = file[0].infecto || [];
+    const newInfecto = data.infecto || [];
 
+    //validar que no existan datos duplicados
+
+    const combinedInfecto = [...new Set([...oldInfecto, ...newInfecto])];
     await db
       .update(Files)
-      .set({ infecto: newInfecto })
+      .set({ infecto: combinedInfecto })
       .where(eq(Files.id, fileId));
 
     return c.json({ success: true, error: "" });
@@ -238,18 +275,23 @@ export const fileRoute = new Hono<{ Variables: authVariables }>()
       if (file[0].doctorId != doctorId)
         return c.json({ success: false, error: "unauthorized" });
 
-      const olfHereditary = file[0].hereditary;
-      const newHereditary = [...(olfHereditary ?? []), ...data.hereditary];
+      const oldHereditary = file[0].hereditary || [];
+      const newHereditary = data.hereditary || [];
+
+      const combinedHereditary = [
+        ...new Set([...oldHereditary, ...newHereditary]),
+      ];
 
       await db
         .update(Files)
-        .set({ hereditary: newHereditary })
+        .set({ hereditary: combinedHereditary })
         .where(eq(Files.id, fileId));
 
       return c.json({ success: true, error: "" });
     }
   )
 
+  //for pediatrics and generals
   .get("/apnp", async (c) => {
     const user = c.get("user");
     if (!user) {
@@ -284,7 +326,7 @@ export const fileRoute = new Hono<{ Variables: authVariables }>()
     const file = await db
       .select({
         doctorId: Patients.doctorId,
-        apnp: Files.app,
+        apnp: Files.apnp,
       })
       .from(Files)
       .innerJoin(Patients, eq(Files.patientId, Patients.id))
@@ -301,10 +343,62 @@ export const fileRoute = new Hono<{ Variables: authVariables }>()
 
     return c.json({ success: true, error: "", data: file[0].apnp });
   })
+  .get("/app", async (c) => {
+    const user = c.get("user");
+    if (!user) {
+      return c.json({
+        success: false,
+        error: "unauthorized",
+        data: null,
+      });
+    }
 
-  // antecendentes personales patologicos
-  //general
-  .patch("/general/app/:fileId/:apnp", async (c) => {
+    if (user.role != "DOCTOR") {
+      return c.json({
+        success: false,
+        error: "unauthorized",
+        data: null,
+      });
+    }
+
+    const doctorId = await doctorIdentification(user.id, user.role);
+    if (!doctorId) {
+      return c.json({
+        success: false,
+        error: "unauthorized",
+        data: null,
+      });
+    }
+
+    const fileId = c.req.query("fileId");
+    if (!fileId) {
+      return c.json({ success: false, error: "id requerido", data: null }, 500);
+    }
+
+    const file = await db
+      .select({
+        doctorId: Patients.doctorId,
+        app: Files.app,
+      })
+      .from(Files)
+      .innerJoin(Patients, eq(Files.patientId, Patients.id))
+      .where(eq(Files.id, fileId));
+
+    if (file.length === 0)
+      return c.json(
+        { success: false, error: "No se encontro el expediente", data: null },
+        500
+      );
+
+    if (file[0].doctorId != doctorId) {
+      return c.json({ success: false, error: "unauthorized", data: null }, 500);
+    }
+
+    return c.json({ success: true, error: "", data: file[0].app });
+  })
+
+  // antecendentes personales no patologicos general
+  .patch("/general/apnp/:fileId/:apnp", async (c) => {
     const user = c.get("user");
     if (!user) {
       return c.json({ success: false, error: "unauthorized" });
@@ -346,7 +440,7 @@ export const fileRoute = new Hono<{ Variables: authVariables }>()
       .select({
         id: Files.id,
         doctorId: Patients.doctorId,
-        app: Files.app,
+        app: Files.apnp,
         patientId: Files.patientId,
       })
       .from(Files)
@@ -414,8 +508,155 @@ export const fileRoute = new Hono<{ Variables: authVariables }>()
     // Actualizar la base de datos
     await db
       .update(Files)
-      .set({ app: updatedObject })
+      .set({ apnp: updatedObject })
       .where(eq(Files.id, fileId));
 
     return c.json({ success: true });
+  })
+  //antecedentes personales no patológicos pediatricos
+  .patch("/pediatric/:fileId/apnp/:caso", async (c) => {
+    const user = c.get("user");
+    if (!user) {
+      return c.json({ success: false, error: "unauthorized" });
+    }
+
+    const doctorId = await doctorIdentification(user.id, user.role);
+    if (!doctorId) {
+      return c.json({ success: false, error: "unauthorized" });
+    }
+    const fileId = c.req.param("fileId");
+    if (!fileId) return c.json({ success: false, error: "id requerido" });
+
+    const caso = c.req.param("caso");
+    if (!caso) return c.json({ success: false, error: "caso requerido" });
+    const body = await c.req.json();
+
+    const old = await db
+      .select({ apnp: Files.apnp })
+      .from(Files)
+      .where(eq(Files.id, fileId));
+
+    interface Apnp {
+      prenatales?: Record<string, any>;
+      parto?: Record<string, any>;
+      postnatales?: Record<string, any>;
+      feeding?: Record<string, any>;
+      psico?: Record<string, any>;
+    }
+
+    const oldValue: Apnp = old[0].apnp || {};
+
+    if (caso === "prenatales") {
+      const result = prenatalesSchema.safeParse(body);
+      if (!result.success)
+        return c.json({ success: false, error: result.error.message });
+      if (!oldValue.prenatales) {
+        oldValue.prenatales = {};
+      }
+      oldValue.prenatales = { ...oldValue.prenatales, ...result.data };
+    }
+
+    if (caso === "parto") {
+      const oldDate = new Date(body.horaNacimiento);
+
+      const datePatient = await db
+        .select({
+          date: Patients.date,
+        })
+        .from(Patients)
+        .innerJoin(Files, eq(Patients.id, Files.patientId))
+        .where(eq(Files.id, fileId));
+
+      const patientDate = datePatient[0].date;
+      const birthDate = new Date(patientDate);
+
+      const combinedDateTime = new Date(
+        birthDate.getFullYear(),
+        birthDate.getMonth(),
+        birthDate.getDate(),
+        oldDate.getHours(),
+        oldDate.getMinutes(),
+        oldDate.getSeconds()
+      );
+
+      body.horaNacimiento = combinedDateTime;
+
+      const result = partoSchema.safeParse(body);
+      if (!result.success)
+        return c.json({ success: false, error: result.error.message });
+      if (!oldValue.parto) {
+        oldValue.parto = {};
+      }
+      oldValue.parto = { ...oldValue.parto, ...result.data };
+    }
+
+    if (caso === "postnatales") {
+      const result = postSchema.safeParse(body);
+      if (!result.success)
+        return c.json({ success: false, error: result.error.message });
+      if (!oldValue.postnatales) {
+        oldValue.postnatales = {};
+      }
+      oldValue.postnatales = { ...oldValue.postnatales, ...result.data };
+    }
+
+    if (caso === "feeding") {
+      const result = fedingSchema.safeParse(body);
+      if (!result.success)
+        return c.json({ success: false, error: result.error.message });
+      if (!oldValue.feeding) {
+        oldValue.feeding = {};
+      }
+      oldValue.feeding = { ...oldValue.feeding, ...result.data };
+    }
+
+    if (caso === "psico") {
+      const result = psicoSchema.safeParse(body);
+      if (!result.success)
+        return c.json({ success: false, error: result.error.message });
+      if (!oldValue.psico) {
+        oldValue.psico = {};
+      }
+      oldValue.psico = { ...oldValue.psico, ...result.data };
+    }
+
+    await db.update(Files).set({ apnp: oldValue }).where(eq(Files.id, fileId));
+    return c.json({ success: true, error: "" });
+  })
+  // antecedentes personales patologicos pediatricos-general
+  .patch("/app/:fileId", zValidator("json", appSchema), async (c) => {
+    const user = c.get("user");
+    if (!user) {
+      return c.json({ success: false, error: "unauthorized" });
+    }
+
+    const fileId = c.req.param("fileId");
+    if (!fileId) return c.json({ success: false, error: "id requerido" });
+
+    const old = await db
+      .select({ app: Files.app })
+      .from(Files)
+      .where(eq(Files.id, fileId));
+
+    type app = z.infer<typeof appSchema>;
+
+    const oldValue: app = old[0]?.app || {};
+    const data = c.req.valid("json");
+
+    const updatedApp = { ...oldValue, ...data };
+
+    const cleanData = (data: Record<string, string | undefined>) => {
+      return Object.fromEntries(
+        Object.entries(data).filter(([_, value]) => value !== "")
+      );
+    };
+
+    const cleanedData = cleanData(updatedApp);
+
+    await db
+      .update(Files)
+      .set({ app: cleanedData })
+      .where(eq(Files.id, fileId));
+
+    return c.json({ success: true, error: "" });
   });

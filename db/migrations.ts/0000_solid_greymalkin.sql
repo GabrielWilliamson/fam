@@ -15,7 +15,8 @@ CREATE TABLE IF NOT EXISTS "assistants" (
 	"userId" uuid NOT NULL,
 	"change" double precision DEFAULT 0 NOT NULL,
 	"total" double precision DEFAULT 0 NOT NULL,
-	"expences" json
+	"dolars" integer DEFAULT 0 NOT NULL,
+	"cordobas" double precision DEFAULT 0 NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "dates" (
@@ -34,6 +35,7 @@ CREATE TABLE IF NOT EXISTS "doctors" (
 	"credential" text,
 	"socials" json,
 	"assistantId" uuid,
+	"rate" double precision DEFAULT 0 NOT NULL,
 	"specialtie" "specialties" DEFAULT 'GENERAL' NOT NULL,
 	"createdAt" timestamp DEFAULT now() NOT NULL,
 	CONSTRAINT "doctors_credential_unique" UNIQUE("credential")
@@ -65,6 +67,15 @@ CREATE TABLE IF NOT EXISTS "exams" (
 	"exInf" text,
 	"exSup" text,
 	"createdAt" timestamp DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE IF NOT EXISTS "Expences" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"description" text,
+	"total" double precision NOT NULL,
+	"dollars" double precision,
+	"cordobas" double precision,
+	"assistantId" uuid NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "files" (
@@ -188,6 +199,12 @@ END $$;
 --> statement-breakpoint
 DO $$ BEGIN
  ALTER TABLE "exams" ADD CONSTRAINT "exams_querieId_queries_id_fk" FOREIGN KEY ("querieId") REFERENCES "public"."queries"("id") ON DELETE no action ON UPDATE no action;
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
+DO $$ BEGIN
+ ALTER TABLE "Expences" ADD CONSTRAINT "Expences_assistantId_assistants_id_fk" FOREIGN KEY ("assistantId") REFERENCES "public"."assistants"("id") ON DELETE no action ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;

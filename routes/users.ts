@@ -63,10 +63,53 @@ export const usersRoute = new Hono<{ Variables: authVariables }>()
         .returning({ role: Users.role, id: Users.id, email: Users.email });
 
       if (user[0].role === "DOCTOR") {
+        //add diasses
+
+        const hereditary = [
+          "alergias",
+          "diabetes mellitus",
+          "hipertensión arterial",
+          "enfermedad reumática",
+          "enfermedades renales",
+          "enfermedades oculares",
+          "enfermedades cardiacas",
+          "enfermedad hepática",
+          "enfermedades musculares",
+          "malformaciones congénitas",
+          "desórdenes mentales",
+          "enfermedades degenerativas del sistema nervioso central",
+          "anomalías del crecimiento y desarrollo",
+          "errores innatos del metabolismo",
+        ];
+        
+        const infecto = [
+          "hepatitis",
+          "sífilis",
+          "tb",
+          "cólera",
+          "amebiasis",
+          "tosferina",
+          "sarampión",
+          "varicela",
+          "rubeola",
+          "parotiditis",
+          "meningitis",
+          "impétigo",
+          "fiebre tifoidea",
+          "escarlatina",
+          "malaria",
+          "escabiosis",
+          "pediculosis",
+          "tiña",
+        ];
+        
+
         const re = await db
           .insert(Doctors)
           .values({
             userId: user[0].id,
+            hereditary: hereditary,
+            infecto: infecto,
           })
           .returning({ id: Doctors.id });
       }

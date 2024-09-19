@@ -20,6 +20,7 @@ import {
 } from "../schemas/vitalSchema";
 import {
   autoSchema,
+  chargeSchema,
   headSchema,
   priceSchema,
   toraxSchema,
@@ -454,6 +455,7 @@ export const queriesRoute = new Hono<{ Variables: authVariables }>()
     if (!doctorId) {
       return c.json({ success: false, error: "No autorizado" }, 500);
     }
+    console.log("hello friend");
 
     const querieId = c.req.param("querieId");
     if (!querieId)
@@ -762,7 +764,7 @@ export const queriesRoute = new Hono<{ Variables: authVariables }>()
     return c.json({ success: true, error: null }, 200);
   })
   //charge querie
-  .patch("/charge/:querieId", async (c) => {
+  .patch("/charge/:querieId", zValidator("json", chargeSchema), async (c) => {
     const user = c.get("user");
     if (!user) return c.json({ success: false, error: "No autorizado" }, 401);
     if (user.role === "ADMIN")
@@ -777,6 +779,7 @@ export const queriesRoute = new Hono<{ Variables: authVariables }>()
     if (!querieId)
       return c.json({ success: false, error: "El id es requerido" }, 500);
 
+    const data = c.req.valid("json");
     //find querie
     const queryFind = await db
       .select({
@@ -817,6 +820,8 @@ export const queriesRoute = new Hono<{ Variables: authVariables }>()
       .update(Assistants)
       .set({
         total: sql`${Assistants.total} + ${price}`,
+        dollars: sql`${Assistants.dollars} + ${data.dolares}`,
+        cordobas: sql`${Assistants.cordobas} + ${data.cordobas}`,
       })
       .where(eq(Assistants.userId, user.id));
 
@@ -944,7 +949,6 @@ export const queriesRoute = new Hono<{ Variables: authVariables }>()
 
     return c.json({ success: true, error: null, data: queries }, 200);
   })
-
   .get("/recent", async (c) => {
     const user = c.get("user");
     if (!user)

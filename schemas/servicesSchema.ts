@@ -11,9 +11,25 @@ export const rateSchema = z.object({
 });
 export type tRate = z.infer<typeof rateSchema>;
 
-export function generateConciliationSchema(total: number) {
+export function generateConciliationSchema(cordobas: number, dolares: number) {
   const conciliationSchema = z.object({
-    total: z.number().positive().max(total),
+    cordobas: z.number().max(cordobas).default(0),
+    dolares: z.number().max(dolares).default(0),
   });
   return conciliationSchema;
+}
+
+export function generateExpencesSchema(cordobas: number, dolares: number) {
+  const formSchema = z.object({
+    description: z.string().min(1, "La descripción es requerida"),
+    cordobas: z
+      .number()
+      .max(cordobas, "La cantidad supera el monto disponible")
+      .default(0),
+    dollars: z
+      .number()
+      .max(dolares, "La cantidad supera el monto disponible")
+      .default(0),
+  });
+  return formSchema;
 }
