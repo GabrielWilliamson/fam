@@ -7,14 +7,14 @@ import { db } from "../db/db";
 import { Patients, Queries } from "../db/schemas";
 import { eq } from "drizzle-orm";
 import doctorIdentification from "../lib/identification";
+import { DeleteObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import {
-  DeleteObjectCommand,
-  S3Client,
-} from "@aws-sdk/client-s3";
-import { getResource, getResources, saveIdResources, upload } from "../lib/store";
-
-
-
+  DeleteResource,
+  getResource,
+  getResources,
+  saveIdResources,
+  upload,
+} from "../lib/store";
 
 export const mediaRoute = new Hono<{ Variables: authVariables }>()
 
@@ -102,81 +102,64 @@ export const mediaRoute = new Hono<{ Variables: authVariables }>()
     }
   })
   //borrar un recurso de la consulta
-  // .delete("/resources/:queryId/:resourceId", async (c) => {
-  //   const user = c.get("user");
-  //   if (!user)
-  //     return c.json(
-  //       { error: "No se encontro el usuario", success: false },
-  //       401
-  //     );
-  //   if (user.role !== "DOCTOR")
-  //     return c.json({ error: "No autorizado", success: false }, 401);
+  .delete("/resources/:queryId/:resourceId", async (c) => {
+    const user = c.get("user");
+    if (!user)
+      return c.json(
+        { error: "No se encontro el usuario", success: false },
+        401,
+      );
+    if (user.role !== "DOCTOR")
+      return c.json({ error: "No autorizado", success: false }, 401);
 
-  //   const doctorId = await doctorIdentification(user.id, user.role);
-  //   if (!doctorId)
-  //     return c.json({ error: "No autorizado", success: false }, 401);
+    const doctorId = await doctorIdentification(user.id, user.role);
+    if (!doctorId)
+      return c.json({ error: "No autorizado", success: false }, 401);
 
-  //   const queryId = c.req.param("queryId");
-  //   if (!queryId)
-  //     return c.json({ error: "No se encontro el query", success: false }, 400);
+    const queryId = c.req.param("queryId");
+    if (!queryId)
+      return c.json({ error: "No se encontro el query", success: false }, 400);
 
-  //   const resourceId = c.req.param("resourceId");
-  //   if (!resourceId)
-  //     return c.json({ error: "No se encontro el id", success: false }, 400);
+    const resourceId = c.req.param("resourceId");
+    if (!resourceId)
+      return c.json({ error: "No se encontro el id", success: false }, 400);
+    try {
+      // Obtener los recursos actuales desde la base de datos
+      const currentResources = await db
+        .select({
+          resources: Queries.resources,
+        })
+        .from(Queries)
+        .where(eq(Queries.id, queryId));
 
-  //   const input = {
-  //     Bucket: bucketName,
-  //     Key: resourceId,
-  //   };
-  //   const command = new DeleteObjectCommand(input);
+      if (!currentResources || currentResources.length === 0) {
+        return c.json(
+          { error: "No se encontraron recursos", success: false },
+          404,
+        );
+      }
 
-  //   try {
-  //     const s3 = new S3Client({
-  //       region: region,
-  //       credentials: {
-  //         accessKeyId: accessKeyId,
-  //         secretAccessKey: secretAccessKey,
-  //       },
-  //     });
-  //     await s3.send(command);
+      await DeleteResource(resourceId);
 
-  //     // Obtener los recursos actuales desde la base de datos
-  //     const currentResources = await db
-  //       .select({
-  //         resources: Queries.resources,
-  //       })
-  //       .from(Queries)
-  //       .where(eq(Queries.id, queryId));
+      // Filtrar el recurso que se debe eliminar del array
+      const newResources = currentResources[0].resources?.filter(
+        (resource) => resource.split(".")[0] !== resourceId,
+      );
 
-  //     if (!currentResources || currentResources.length === 0) {
-  //       return c.json(
-  //         { error: "No se encontraron recursos", success: false },
-  //         404
-  //       );
-  //     }
+      await db
+        .update(Queries)
+        .set({ resources: newResources })
+        .where(eq(Queries.id, queryId));
 
-  //     // Filtrar el recurso que se debe eliminar del array
-  //     const newResources = currentResources[0].resources?.filter(
-  //       (resource) => resource.split(".")[0] !== resourceId
-  //     );
-
-  //     console.log(newResources, "esto estamos guardando");
-
-  //     // Actualizar los recursos en la base de datos
-  //     await db
-  //       .update(Queries)
-  //       .set({ resources: newResources })
-  //       .where(eq(Queries.id, queryId));
-
-  //     return c.json({ error: "", success: true });
-  //   } catch (e) {
-  //     console.log("error deleting file");
-  //     return c.json(
-  //       { error: "Error al borrar el archivo", success: false },
-  //       500
-  //     );
-  //   }
-  // })
+      return c.json({ error: "", success: true });
+    } catch (e) {
+      console.log("error deleting file");
+      return c.json(
+        { error: "Error al borrar el archivo", success: false },
+        500,
+      );
+    }
+  })
   //obtener los recursos de la consulta
   .get("/resources/:queryId", async (c) => {
     const user = c.get("user");
@@ -232,7 +215,7 @@ export const mediaRoute = new Hono<{ Variables: authVariables }>()
     if (!patient)
       return c.json(
         { success: false, error: "No se encontro el paciente", data: null },
-        500
+        500,
       );
 
     if (patient[0].doctorId !== doctorId) {
@@ -287,5 +270,3 @@ export const mediaRoute = new Hono<{ Variables: authVariables }>()
   });
 
 export default mediaRoute;
-
-

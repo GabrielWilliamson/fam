@@ -6,6 +6,7 @@ import {
   GetObjectCommand,
   PutObjectCommand,
   S3Client,
+  DeleteObjectCommand,
 } from "@aws-sdk/client-s3";
 
 const region = process.env.AWS_BUCKET_REGION!;
@@ -24,7 +25,7 @@ export const s3 = new S3Client({
 export async function upload(
   arrayBuffer: ArrayBuffer,
   name: string,
-  contentType: string
+  contentType: string,
 ) {
   const uint8Array = new Uint8Array(arrayBuffer);
 
@@ -57,7 +58,7 @@ export async function saveIdResources(fileId: string, queryId: string) {
 }
 
 export async function getResources(
-  list: string[]
+  list: string[],
 ): Promise<{ id: string; url: string }[]> {
   const s3 = new S3Client({
     region: region,
@@ -100,4 +101,21 @@ export async function getResource(idResource: string) {
   });
 
   return await getSignedUrl(s3, command, { expiresIn: 3600 });
+}
+
+export async function DeleteResource(resourceId: string) {
+  const input = {
+    Bucket: bucketName,
+    Key: resourceId,
+  };
+  const command = new DeleteObjectCommand(input);
+
+  const s3 = new S3Client({
+    region: region,
+    credentials: {
+      accessKeyId: accessKeyId,
+      secretAccessKey: secretAccessKey,
+    },
+  });
+  await s3.send(command);
 }
