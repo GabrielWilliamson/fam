@@ -1,4 +1,4 @@
-**Pasos para Agendar una Cita**
+# Guía de Usuario: **Agendar una cita**
 
 ### 1. Selecciona un paciente
 Haz clic en el campo de selección de pacientes y empieza a escribir el nombre. Luego, elige el paciente deseado de la lista.
@@ -19,4 +19,3 @@ Una vez seleccionados el día y los horarios, haz clic en el botón **Guardar ci
 ---
 
 El calendario reflejará tu cita para el día seleccionado. Además, puedes navegar entre las vistas de **mes**, **semana** o **día** utilizando los botones ubicados en la parte superior izquierda del calendario.
-

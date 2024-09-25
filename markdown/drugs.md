@@ -1,4 +1,4 @@
-# Ayuda: Interfaz **Nuevo Fármaco**
+# Guía de Usuario: **Nuevo Fármaco**
 
 ## Descripción General
 

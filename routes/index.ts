@@ -12,6 +12,7 @@ import { mediaRoute } from "./media";
 import { servicesRoute } from "./services";
 import { helpsRoute } from "./helps";
 import { docsRoute } from "./docs";
+import { dataRoute } from "./data";
 
 export const route = {
   drugsRoute,
@@ -28,4 +29,5 @@ export const route = {
   servicesRoute,
   helpsRoute,
   docsRoute,
+  dataRoute,
 };

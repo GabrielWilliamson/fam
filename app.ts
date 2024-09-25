@@ -21,6 +21,7 @@ const {
   servicesRoute,
   helpsRoute,
   docsRoute,
+  dataRoute,
 } = route;
 
 import dotenv from "dotenv";
@@ -47,7 +48,8 @@ const routes = app
   .route("/prescriptions", prescriptionsRoute)
   .route("/media", mediaRoute)
   .route("/services", servicesRoute)
-  .route("/docs", docsRoute);
+  .route("/docs", docsRoute)
+  .route("/data", dataRoute);
 
 app.get("*", serveStatic({ root: "./static" }));
 app.get("*", serveStatic({ path: "./static/index.html" }));

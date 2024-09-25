@@ -17,7 +17,7 @@ Esta interfaz permite a los usuarios acceder a su cuenta introduciendo su **Emai
    - En el campo etiquetado como **Clave**, escribe tu contraseña.
    - **Funcionalidad adicional:** Si quieres ver la contraseña mientras la escribes, puedes hacer clic en el **icono del ojo** situado a la derecha del campo de la clave para mostrar u ocultar la contraseña.
 
-### 3. **Recuperar Contraseña**
+### 3. **Recuperar Clave**
    - Si no recuerdas tu contraseña, haz clic en el enlace **¿Olvidaste tu clave?** debajo del campo de la clave.
    - Se te redirigirá a una página para recuperar o restablecer tu contraseña siguiendo las instrucciones proporcionadas.
 
@@ -36,6 +36,3 @@ Esta interfaz permite a los usuarios acceder a su cuenta introduciendo su **Emai
 - **Ubicación del icono:** En la esquina inferior derecha de la pantalla, encontrarás un ícono que te permite alternar entre **modo claro** y **modo oscuro**.
    - **Ícono de Sol:** Indica que estás en **modo oscuro**. Haz clic en el ícono para activar el **modo claro**.
    - **Ícono de Luna:** Indica que estás en **modo claro**. Haz clic en el ícono para activar el **modo oscuro**.
-
-
-

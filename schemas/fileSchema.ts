@@ -7,8 +7,6 @@ export const infectoSchema = z.object({
     .max(10, "No puedes seleccionar mas de 10 enfermedades"),
 });
 
-export type tInfecto = z.infer<typeof infectoSchema>;
-
 export const hereditarySchema = z.object({
   hereditary: z
     .array(z.string())
@@ -16,9 +14,7 @@ export const hereditarySchema = z.object({
     .max(10, "No puedes seleccionar mas de 10 enfermedades"),
 });
 
-export type tHereditary = z.infer<typeof hereditarySchema>;
-
-//pedriatrics
+//pediatric
 export const prenatalesSchema = z.object({
   gesta: z.string().max(300, "error").nullable().optional(),
   para: z.string().max(300, "error").nullable().optional(),
@@ -34,6 +30,7 @@ export const prenatalesSchema = z.object({
   medicacionEmbarazo: z.string().max(300, "error").nullable().optional(),
   hospitalizaciones: z.string().max(300, "error").nullable().optional(),
 });
+
 export const partoSchema = z.object({
   lugarAtencionParto: z.string({ required_error: "Este campo es requerido" }),
   horaNacimiento: z.date({ required_error: "Este campo es requerido" }),
@@ -51,6 +48,7 @@ export const partoSchema = z.object({
   presentacion: z.string().optional().nullable(),
   eventualidades: z.string().optional(),
 });
+
 export const postSchema = z
   .object({
     apgar1: z.string().min(1, "APGAR 1° es requerido"),
@@ -74,7 +72,7 @@ export const postSchema = z
     {
       message: "Si asfixia es true, debe especificar",
       path: ["asfixiaEspecifique"],
-    }
+    },
   )
   .refine(
     (data) => {
@@ -87,7 +85,7 @@ export const postSchema = z
       message:
         "Si alojamiento conjunto es true, debe especificar el tiempo junto a la madre",
       path: ["tiempoJuntoMadre"],
-    }
+    },
   )
   .refine(
     (data) => {
@@ -100,12 +98,14 @@ export const postSchema = z
       message:
         "Si el tiempo junto a la madre es Transitorio, debe especificar las horas",
       path: ["horasJuntoMadre"],
-    }
+    },
   );
 
 export const fedingSchema = z.object({
-  exclusiveBreastfeeding: z.boolean(),
-  mixedFeeding: z.boolean(),
+  exclusiveBreastfeeding: z.boolean({
+    required_error: "Este campo es requerido",
+  }),
+  mixedFeeding: z.boolean({ required_error: "Este campo es requerido" }),
   exclusiveBreastfeedingDuration: z.string().optional(),
   mixedFeedingDuration: z.string().optional(),
   weaning: z.string().optional(),
@@ -161,3 +161,12 @@ export const appSchema = z.object({
   others: z.string().optional(),
 });
 
+export type app = z.infer<typeof appSchema>;
+export type psico = z.infer<typeof psicoSchema>;
+export type feeding = z.infer<typeof fedingSchema>;
+export type tPost = z.infer<typeof postSchema>;
+export type tParto = z.infer<typeof partoSchema>;
+export type tPrenatales = z.infer<typeof prenatalesSchema>;
+
+export type tInfecto = z.infer<typeof infectoSchema>;
+export type tHereditary = z.infer<typeof hereditarySchema>;

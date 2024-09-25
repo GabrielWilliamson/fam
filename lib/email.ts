@@ -1,11 +1,11 @@
 import nodemailer from "nodemailer";
 
 const createTransporter = () => {
-  const { SMPT_EMAIL, SMTP_GMAIL_PASS } = process.env;
+  const { SMTP_EMAIL, SMTP_GMAIL_PASS } = process.env;
   return nodemailer.createTransport({
     service: "gmail",
     auth: {
-      user: SMPT_EMAIL,
+      user: SMTP_EMAIL,
       pass: SMTP_GMAIL_PASS,
     },
   });
