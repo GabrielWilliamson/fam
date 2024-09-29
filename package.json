@@ -3,7 +3,7 @@
   "module": "index.ts",
   "type": "module",
   "scripts": {
-    "start": "TZ=America/Managua bun start index.ts",
+    "start": "bun start index.ts",
     "dev": "TZ=America/Managua bun --watch index.ts"
   },
   "dependencies": {

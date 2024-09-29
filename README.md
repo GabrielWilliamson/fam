@@ -40,6 +40,8 @@ sudo nano /etc/systemd/system/famed.service
 
 # ver el .env
 
+/home/ubuntu/.bun/bin/bun
+
 sudo nano /etc/famed.env
 
 # restringir permisos
