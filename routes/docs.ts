@@ -3,7 +3,7 @@ import { Hono } from "hono";
 import { db } from "../db/db";
 import { Doctors, Files, Patients, Relatives, Users } from "../db/schemas";
 import { getResource } from "../lib/store";
-import type { AuthVariables } from "../types/auth";
+import type { authVariables } from "../types/auth";
 import { readFile } from "fs/promises";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -675,7 +675,7 @@ async function makeDoc(
   endCallback();
 }
 
-export const docsRoute = new Hono<{ Variables: AuthVariables }>().get(
+export const docsRoute = new Hono<{ Variables: authVariables }>().get(
   "/pediatric",
   async (c) => {
     const patientId = c.req.query("patientId");

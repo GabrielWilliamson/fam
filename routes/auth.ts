@@ -18,7 +18,6 @@ import { initializeLucia } from "../auth/lucia";
 import { eq } from "drizzle-orm";
 import hashPassword, { generateEmailVerificationToken } from "../lib/hash";
 import { sendForgotEmail } from "../lib/email";
-import { sparsevec } from "drizzle-orm/pg-core";
 
 dotenv.config();
 
@@ -77,7 +76,7 @@ export const authRoute = new Hono<{ Variables: authVariables }>()
       c,
       sessionCookie.name,
       sessionCookie.value,
-      sessionCookie.attributes
+      sessionCookie.attributes,
     );
     return c.json({ success: true, error: "", role: user.role });
   })
@@ -256,7 +255,7 @@ export const authRoute = new Hono<{ Variables: authVariables }>()
       }
 
       return c.json({ success: true, error: "" });
-    }
+    },
   )
   .patch("/reset", zValidator("json", resetSchema), async (c) => {
     const data = c.req.valid("json");
@@ -294,6 +293,6 @@ export const authRoute = new Hono<{ Variables: authVariables }>()
     const session = c.get("session");
     if (!session) return c.json({ success: false, data: null }, 401);
     const secretKey = process.env.JWT_SECRET!;
-    const token = jwt.sign({ data: session }, secretKey, {expiresIn: "20m"});
+    const token = jwt.sign({ data: session }, secretKey, { expiresIn: "20m" });
     return c.json({ data: token });
   });

@@ -1,4 +1,4 @@
-# Guía de Usuario: **Recuperar Clave**
+# Guía de Usuario: `Recuperar Clave`
 
 ## **Ingresar Correo Electrónico**
 
@@ -7,8 +7,8 @@
 
 ## **Enviar Solicitud de Recuperación**
 
-1. Haz clic en el botón **Recuperar** una vez que hayas ingresado tu correo.
-2. Se enviará un correo electrónico a la dirección proporcionada con instrucciones para restablecer tu contraseña.
+- Haz clic en el botón **Recuperar** una vez que hayas ingresado tu correo.
+- Se enviará un correo electrónico a la dirección proporcionada con instrucciones para restablecer tu contraseña.
 
 ## **Regresar al Login**
 

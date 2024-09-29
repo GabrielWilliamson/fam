@@ -4,25 +4,44 @@
 
 Esta sección muestra los datos básicos del paciente:
 
-1. Verifica que la información sea correcta.
-2. La foto del paciente aparece en la esquina superior izquierda. Puedes hacer clic en el ícono "X" para eliminarla o cambiarla si es necesario.
+> [!NOTE]
+> Puedes actualizar la foto del paciente. Selecciona el botón "Actualizar foto" y elige una imagen según las indicaciones.
 
 ## Familiares
 
 Aquí puedes gestionar la información de los familiares del paciente:
 
-1. La tabla muestra el nombre, parentesco y teléfono de los familiares.
-2. Para agregar un nuevo familiar, haz clic en el botón "+" en la esquina superior derecha de esta sección.
-3. Puedes editar la información existente haciendo clic en el ícono de lápiz junto al número de teléfono.
-4. El ícono de mensaje te permite enviar un mensaje rápido al familiar (si esta función está habilitada).
+- La tabla muestra el nombre, parentesco y teléfono de los familiares.
+- Para agregar un nuevo familiar, haz clic en el botón `Nuevo familiar` en la esquina superior derecha de esta sección.
+- Puedes editar la información existente haciendo clic en el ícono de lápiz junto al número de teléfono.
+- El ícono de mensaje te permite enviar un mensaje rápido al familiar.
 
 ## Antecedentes Familiares Patológicos
 
-Esta sección te permite registrar el historial médico familiar:
+Hay dos pestañas principales: `Infecto-contagiosas` y `Hereditarias`.
 
-1. Hay dos pestañas principales: "Infecto-contagiosas" y "Hereditarias".
-2. En "Enfermedades Infecto-contagiosas", puedes agregar enfermedades haciendo clic en el botón "+" en la esquina inferior derecha.
-3. Utiliza la pestaña "Hereditarias" para registrar enfermedades genéticas o hereditarias en la familia.
+> [!NOTE]
+> Si en la lista de enfermedades no encuentras la enfermedad que deseas registrar, puedes agregarla haciendo clic en el botón "Agregar".
+
+> [!WARNING]
+> Asegúrate de validar correctamente la información de la enfermedad antes de registrarla, ya que luego no podrás quitarla de la lista.
+
+## Antecedentes Personales No Patológicos
+
+falta
+
+## Antecedentes Personales Patológicos
+
+Esta sección te permite registrar los antecedentes personales patológicos. Los principales son:
+
+- Infecciones.
+- Enfermedades crónicas.
+- Cirugías.
+- Hospitalizaciones.
+- Otros.
+
+> [!NOTE]
+> Ninguno de estos campos es obligatorio. Puedes registrar una infección, y en el futuro, si ocurre otra, agregarla sin problema.
 
 ## Consejos generales:
 
@@ -30,4 +49,5 @@ Esta sección te permite registrar el historial médico familiar:
 - Verifica la información regularmente para mantenerla actualizada.
 - Si tienes dudas sobre algún campo, consulta con el administrador del sistema o el personal médico correspondiente.
 
-Recuerda que mantener esta información precisa y actualizada es crucial para proporcionar la mejor atención médica posible al paciente.
+> [!TIP]
+> Recuerda que mantener esta información precisa y actualizada es crucial para proporcionar la mejor atención médica posible al paciente.

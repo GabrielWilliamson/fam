@@ -1,5 +1,5 @@
 {
-  "id": "46c7fcb1-03c3-452c-91e0-07cf8af64181",
+  "id": "1b9e2587-722e-4661-bfbc-ddce3966482e",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -20,13 +20,6 @@
           "type": "uuid",
           "primaryKey": false,
           "notNull": true
-        },
-        "change": {
-          "name": "change",
-          "type": "double precision",
-          "primaryKey": false,
-          "notNull": true,
-          "default": 0
         },
         "total": {
           "name": "total",
@@ -66,6 +59,36 @@
           "onUpdate": "no action"
         }
       },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {}
+    },
+    "public.banks": {
+      "name": "banks",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "createdAt": {
+          "name": "createdAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {}
     },
@@ -199,6 +222,39 @@
           "primaryKey": false,
           "notNull": true,
           "default": "'GENERAL'"
+        },
+        "infecto": {
+          "name": "infecto",
+          "type": "text[]",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "hereditary": {
+          "name": "hereditary",
+          "type": "text[]",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "total": {
+          "name": "total",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "dolars": {
+          "name": "dolars",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "cordobas": {
+          "name": "cordobas",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
         },
         "createdAt": {
           "name": "createdAt",
@@ -420,8 +476,8 @@
       "compositePrimaryKeys": {},
       "uniqueConstraints": {}
     },
-    "public.Expences": {
-      "name": "Expences",
+    "public.expences": {
+      "name": "expences",
       "schema": "",
       "columns": {
         "id": {
@@ -435,7 +491,7 @@
           "name": "description",
           "type": "text",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true
         },
         "total": {
           "name": "total",
@@ -447,29 +503,36 @@
           "name": "dollars",
           "type": "double precision",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true
         },
         "cordobas": {
           "name": "cordobas",
           "type": "double precision",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true
         },
-        "assistantId": {
-          "name": "assistantId",
+        "userId": {
+          "name": "userId",
           "type": "uuid",
           "primaryKey": false,
           "notNull": true
+        },
+        "createdAt": {
+          "name": "createdAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
         }
       },
       "indexes": {},
       "foreignKeys": {
-        "Expences_assistantId_assistants_id_fk": {
-          "name": "Expences_assistantId_assistants_id_fk",
-          "tableFrom": "Expences",
-          "tableTo": "assistants",
+        "expences_userId_users_id_fk": {
+          "name": "expences_userId_users_id_fk",
+          "tableFrom": "expences",
+          "tableTo": "users",
           "columnsFrom": [
-            "assistantId"
+            "userId"
           ],
           "columnsTo": [
             "id"
@@ -506,6 +569,12 @@
         "hereditary": {
           "name": "hereditary",
           "type": "text[]",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "apnp": {
+          "name": "apnp",
+          "type": "json",
           "primaryKey": false,
           "notNull": false
         },
@@ -833,6 +902,12 @@
           "primaryKey": false,
           "notNull": false
         },
+        "bank": {
+          "name": "bank",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
         "emergency": {
           "name": "emergency",
           "type": "boolean",
@@ -875,6 +950,19 @@
           "tableTo": "dates",
           "columnsFrom": [
             "dateId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "queries_bank_banks_id_fk": {
+          "name": "queries_bank_banks_id_fk",
+          "tableFrom": "queries",
+          "tableTo": "banks",
+          "columnsFrom": [
+            "bank"
           ],
           "columnsTo": [
             "id"
@@ -977,15 +1065,7 @@
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {
-        "relatives_dni_unique": {
-          "name": "relatives_dni_unique",
-          "nullsNotDistinct": false,
-          "columns": [
-            "dni"
-          ]
-        }
-      }
+      "uniqueConstraints": {}
     },
     "public.sessions": {
       "name": "sessions",
@@ -997,15 +1077,15 @@
           "primaryKey": true,
           "notNull": true
         },
-        "expiresAt": {
-          "name": "expiresAt",
-          "type": "timestamp",
+        "userId": {
+          "name": "userId",
+          "type": "text",
           "primaryKey": false,
           "notNull": true
         },
-        "userId": {
-          "name": "userId",
-          "type": "uuid",
+        "expiresAt": {
+          "name": "expiresAt",
+          "type": "timestamp",
           "primaryKey": false,
           "notNull": true
         }

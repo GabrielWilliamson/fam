@@ -1,1 +1,0 @@
-ALTER TABLE "relatives" DROP CONSTRAINT "relatives_dni_unique";

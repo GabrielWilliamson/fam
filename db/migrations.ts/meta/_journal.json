@@ -5,50 +5,8 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1725745433488,
-      "tag": "0000_solid_greymalkin",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1725746304320,
-      "tag": "0001_bent_mentallo",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1725751768068,
-      "tag": "0002_faulty_shooting_star",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "7",
-      "when": 1725765587414,
-      "tag": "0003_curly_cargill",
-      "breakpoints": true
-    },
-    {
-      "idx": 4,
-      "version": "7",
-      "when": 1725896092976,
-      "tag": "0004_thin_hex",
-      "breakpoints": true
-    },
-    {
-      "idx": 5,
-      "version": "7",
-      "when": 1726283134338,
-      "tag": "0005_young_sue_storm",
-      "breakpoints": true
-    },
-    {
-      "idx": 6,
-      "version": "7",
-      "when": 1726573730598,
-      "tag": "0006_solid_ozymandias",
+      "when": 1727440308190,
+      "tag": "0000_nosy_callisto",
       "breakpoints": true
     }
   ]

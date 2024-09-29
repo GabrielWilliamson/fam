@@ -81,7 +81,7 @@ export const usersRoute = new Hono<{ Variables: authVariables }>()
           "anomalías del crecimiento y desarrollo",
           "errores innatos del metabolismo",
         ];
-        
+
         const infecto = [
           "hepatitis",
           "sífilis",
@@ -102,12 +102,12 @@ export const usersRoute = new Hono<{ Variables: authVariables }>()
           "pediculosis",
           "tiña",
         ];
-        
 
         const re = await db
           .insert(Doctors)
           .values({
             userId: user[0].id,
+            rate: 36,
             hereditary: hereditary,
             infecto: infecto,
           })

@@ -1,0 +1,21 @@
+name: famed-ci/cd
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+jobs:
+  build:
+    runs-on: self-hosted
+
+    strategy:
+      matrix:
+        bun-version: [1.1.26]
+
+    steps:
+      - uses: actions/checkout@v3
+
+      # Instala dependencias 🤪
+      - run: bun install

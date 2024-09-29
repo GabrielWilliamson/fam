@@ -1,4 +1,4 @@
-# Guía de Usuario: **Mantenimiento**
+# Guía de Usuario: `Mantenimiento`
 
 ---
 
@@ -35,6 +35,9 @@ En esta sección puedes **gestionar las sesiones activas** de WhatsApp de manera
 2. **Borrar Sesiones:**
    - Para eliminar todas las sesiones, haz clic en el botón **Borrar todas las sesiones**.
    - **Confirma la acción** cuando se te solicite.
+
+> [!WARNING]
+> Si borras las sesiones, los doctores tendrán que volver a iniciar la sesión de WhatsApp en el sistema.
 
 ---
 

@@ -13,6 +13,7 @@ import { servicesRoute } from "./services";
 import { helpsRoute } from "./helps";
 import { docsRoute } from "./docs";
 import { dataRoute } from "./data";
+import { chartsRoute } from "./charts";
 
 export const route = {
   drugsRoute,
@@ -30,4 +31,5 @@ export const route = {
   helpsRoute,
   docsRoute,
   dataRoute,
+  chartsRoute,
 };

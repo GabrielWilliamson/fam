@@ -13,10 +13,15 @@ END $$;
 CREATE TABLE IF NOT EXISTS "assistants" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"userId" uuid NOT NULL,
-	"change" double precision DEFAULT 0 NOT NULL,
 	"total" double precision DEFAULT 0 NOT NULL,
 	"dolars" integer DEFAULT 0 NOT NULL,
 	"cordobas" double precision DEFAULT 0 NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE IF NOT EXISTS "banks" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"name" text NOT NULL,
+	"createdAt" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "dates" (
@@ -37,6 +42,11 @@ CREATE TABLE IF NOT EXISTS "doctors" (
 	"assistantId" uuid,
 	"rate" double precision DEFAULT 0 NOT NULL,
 	"specialtie" "specialties" DEFAULT 'GENERAL' NOT NULL,
+	"infecto" text[],
+	"hereditary" text[],
+	"total" double precision DEFAULT 0 NOT NULL,
+	"dolars" integer DEFAULT 0 NOT NULL,
+	"cordobas" double precision DEFAULT 0 NOT NULL,
 	"createdAt" timestamp DEFAULT now() NOT NULL,
 	CONSTRAINT "doctors_credential_unique" UNIQUE("credential")
 );
@@ -69,13 +79,14 @@ CREATE TABLE IF NOT EXISTS "exams" (
 	"createdAt" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE IF NOT EXISTS "Expences" (
+CREATE TABLE IF NOT EXISTS "expences" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-	"description" text,
+	"description" text NOT NULL,
 	"total" double precision NOT NULL,
-	"dollars" double precision,
-	"cordobas" double precision,
-	"assistantId" uuid NOT NULL
+	"dollars" double precision NOT NULL,
+	"cordobas" double precision NOT NULL,
+	"userId" uuid NOT NULL,
+	"createdAt" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "files" (
@@ -83,6 +94,7 @@ CREATE TABLE IF NOT EXISTS "files" (
 	"patientId" uuid NOT NULL,
 	"infecto" text[],
 	"hereditary" text[],
+	"apnp" json,
 	"app" json,
 	"createdAt" timestamp DEFAULT now() NOT NULL
 );
@@ -129,6 +141,7 @@ CREATE TABLE IF NOT EXISTS "queries" (
 	"dateId" uuid NOT NULL,
 	"price" double precision DEFAULT 0,
 	"collector" uuid,
+	"bank" uuid,
 	"emergency" boolean DEFAULT false,
 	"doctorId" uuid NOT NULL,
 	"createdAt" timestamp DEFAULT now() NOT NULL
@@ -143,14 +156,13 @@ CREATE TABLE IF NOT EXISTS "relatives" (
 	"civilStatus" text NOT NULL,
 	"phone" text,
 	"patientId" uuid NOT NULL,
-	"createdAt" timestamp DEFAULT now() NOT NULL,
-	CONSTRAINT "relatives_dni_unique" UNIQUE("dni")
+	"createdAt" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "sessions" (
 	"id" text PRIMARY KEY NOT NULL,
-	"expiresAt" timestamp NOT NULL,
-	"userId" uuid NOT NULL
+	"userId" text NOT NULL,
+	"expiresAt" timestamp NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "users" (
@@ -204,7 +216,7 @@ EXCEPTION
 END $$;
 --> statement-breakpoint
 DO $$ BEGIN
- ALTER TABLE "Expences" ADD CONSTRAINT "Expences_assistantId_assistants_id_fk" FOREIGN KEY ("assistantId") REFERENCES "public"."assistants"("id") ON DELETE no action ON UPDATE no action;
+ ALTER TABLE "expences" ADD CONSTRAINT "expences_userId_users_id_fk" FOREIGN KEY ("userId") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;
@@ -247,6 +259,12 @@ END $$;
 --> statement-breakpoint
 DO $$ BEGIN
  ALTER TABLE "queries" ADD CONSTRAINT "queries_dateId_dates_id_fk" FOREIGN KEY ("dateId") REFERENCES "public"."dates"("id") ON DELETE no action ON UPDATE no action;
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
+DO $$ BEGIN
+ ALTER TABLE "queries" ADD CONSTRAINT "queries_bank_banks_id_fk" FOREIGN KEY ("bank") REFERENCES "public"."banks"("id") ON DELETE no action ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;

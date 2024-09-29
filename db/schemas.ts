@@ -26,18 +26,23 @@ export const Users = pgTable("users", {
   status: boolean("status").default(true).notNull(),
   createdAt: timestamp("createdAt").notNull().defaultNow(),
 });
-export const UserRelations = relations(Users, ({ one }) => ({
+export const UserRelations = relations(Users, ({ one, many }) => ({
   session: one(Sessions),
   doctor: one(Doctors),
   assistant: one(Assistants),
+  expences: many(Expences),
 }));
+
 export const Sessions = pgTable("sessions", {
   id: text("id").primaryKey(),
-  expiresAt: timestamp("expiresAt").notNull(),
-  userId: uuid("userId")
+  userId: text("userId")
     .notNull()
     .references(() => Users.id),
+  expiresAt: timestamp("expiresAt", {
+    mode: "date",
+  }).notNull(),
 });
+
 export const Doctors = pgTable("doctors", {
   id: uuid("id").primaryKey().defaultRandom(),
   userId: uuid("userId")
@@ -50,6 +55,9 @@ export const Doctors = pgTable("doctors", {
   specialtie: Specialties("specialtie").default("GENERAL").notNull(),
   infecto: text("infecto").array(),
   hereditary: text("hereditary").array(),
+  total: doublePrecision("total").notNull().default(0),
+  dollars: integer("dolars").notNull().default(0),
+  cordobas: doublePrecision("cordobas").notNull().default(0),
   createdAt: timestamp("createdAt").notNull().defaultNow(),
 });
 export const DoctorRelations = relations(Doctors, ({ many, one }) => ({
@@ -64,7 +72,6 @@ export const Assistants = pgTable("assistants", {
   userId: uuid("userId")
     .notNull()
     .references(() => Users.id),
-  change: doublePrecision("change").notNull().default(0),
   total: doublePrecision("total").notNull().default(0),
   dollars: integer("dolars").notNull().default(0),
   cordobas: doublePrecision("cordobas").notNull().default(0),
@@ -72,17 +79,17 @@ export const Assistants = pgTable("assistants", {
 export const AssistantRelations = relations(Assistants, ({ many, one }) => ({
   user: one(Users, { fields: [Assistants.id], references: [Users.id] }),
   doctor: one(Doctors, { fields: [Assistants.id], references: [Doctors.id] }),
-  expences: many(Expences),
 }));
-export const Expences = pgTable("Expences", {
+export const Expences = pgTable("expences", {
   id: uuid("id").primaryKey().defaultRandom(),
   description: text("description").notNull(),
   total: doublePrecision("total").notNull(),
   dollars: doublePrecision("dollars").notNull(),
   cordobas: doublePrecision("cordobas").notNull(),
-  assistantId: uuid("assistantId")
+  userId: uuid("userId")
     .notNull()
-    .references(() => Assistants.id),
+    .notNull()
+    .references(() => Users.id),
   createdAt: timestamp("createdAt").notNull().defaultNow(),
 });
 export const Patients = pgTable("patients", {
@@ -153,6 +160,7 @@ export const Queries = pgTable("queries", {
     .references(() => Dates.id),
   price: doublePrecision("price").default(0),
   collector: uuid("collector"),
+  bank: uuid("bank").references(() => Banks.id),
   emergency: boolean("emergency").default(false),
   doctorId: uuid("doctorId")
     .notNull()
@@ -227,5 +235,10 @@ export const Exams = pgTable("exams", {
   neuro: text("neuro"),
   exInf: text("exInf"),
   exSup: text("exSup"),
+  createdAt: timestamp("createdAt").notNull().defaultNow(),
+});
+export const Banks = pgTable("banks", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  name: text("name").notNull(),
   createdAt: timestamp("createdAt").notNull().defaultNow(),
 });

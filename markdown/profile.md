@@ -1,4 +1,4 @@
-# Guía de Usuario: **Administrar Perfil**
+# Guía de Usuario: `Administrar Perfil`
 
 ---
 
@@ -50,4 +50,5 @@ En esta sección, puedes **gestionar tus credenciales de seguridad**.
 
 ---
 
-> **Nota:** Es fundamental que recuerdes tu nueva clave de acceso para garantizar la seguridad de tu cuenta.
+> [!NOTE]
+>  Es fundamental que recuerdes tu nueva clave de acceso para garantizar la seguridad de tu cuenta.
