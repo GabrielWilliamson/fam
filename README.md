@@ -39,4 +39,7 @@ sudo ./svc.sh start
   sudo chown ubuntu:ubuntu /etc/famed.env
 
 
-  sudo nano /etc/famed.env
+  # si se realizan cambios en etc
+    sudo systemctl daemon-reload
+    sudo systemctl enable famed.service
+    sudo systemctl start famed.service
