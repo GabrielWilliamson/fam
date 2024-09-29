@@ -35,7 +35,7 @@ export const UserRelations = relations(Users, ({ one, many }) => ({
 
 export const Sessions = pgTable("sessions", {
   id: text("id").primaryKey(),
-  userId: text("userId")
+  userId: uuid("userId")
     .notNull()
     .references(() => Users.id),
   expiresAt: timestamp("expiresAt", {

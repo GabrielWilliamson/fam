@@ -21,72 +21,22 @@ psql -U $DB_USER -d $DB_NAME -c "
       \$\$; "
 
 
+# para instalar lo necesario para el runner
+sudo ./svc.sh install
+
+# para ponerlo a ejecutar en segundo plano
+sudo ./svc.sh start
 
 
+# Entrar al directorio de configuracion del servicio en segundo plano
+  sudo nano  /etc/systemd/system/famed.service
+
+# ver el .env
+  sudo nano /etc/famed.env
+
+# restringir permisos
+  sudo chmod 600 /etc/famed.env
+  sudo chown ubuntu:ubuntu /etc/famed.env
 
 
-
-
-
-
-      .get("/file", async (c) => {
-        const user = c.get("user");
-        if (!user) return c.json({ success: false, data: null }, 401);
-        if (user.role != "DOCTOR")
-          return c.json({ success: false, data: null }, 401);
-
-        const doctorId = await doctorIdentification(user.id, user.role);
-        if (doctorId === null) {
-          return c.json({ success: false, data: null }, 500);
-        }
-
-        const patientId = c.req.query("patientId");
-        if (!patientId) return c.json({ success: false, data: null }, 500);
-
-        const dataName = await db
-          .select({
-            doctorName: Users.name,
-          })
-          .from(Patients)
-          .innerJoin(Doctors, eq(Patients.doctorId, Doctors.id))
-          .innerJoin(Users, eq(Users.id, Doctors.userId))
-          .where(eq(Patients.id, patientId));
-
-        if (dataName.length <= 0) {
-          return c.json({ success: false, data: null }, 500);
-        }
-
-        const relatives = await db
-          .select({
-            id: Relatives.id,
-            name: Relatives.name,
-            dni: Relatives.dni,
-            phone: Relatives.phone,
-            relation: Relatives.relation,
-            civilStatus: Relatives.civilStatus,
-          })
-          .from(Relatives)
-          .where(eq(Relatives.patientId, patientId));
-
-        const my = await db
-          .select({
-            infecto: Files.infecto,
-            hereditary: Files.hereditary,
-            image: Patients.image,
-            app: Files.app,
-            apnp: Files.apnp,
-          })
-          .from(Files)
-          .innerJoin(Patients, eq(Files.patientId, Patients.id))
-          .where(eq(Files.patientId, patientId));
-
-        const file = my[0];
-        if (file.image) {
-          const image = await getResource(file.image);
-          file.image = image;
-        }
-
-        const name = dataName[0].doctorName;
-
-        return c.json({ success: true, data: { file, relatives, name } });
-      })
+  sudo nano /etc/famed.env
