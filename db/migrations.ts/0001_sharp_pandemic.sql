@@ -1,0 +1,1 @@
+ALTER TABLE "bankAccounts" ADD COLUMN "color" text NOT NULL;

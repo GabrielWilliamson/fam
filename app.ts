@@ -23,6 +23,7 @@ const {
   docsRoute,
   dataRoute,
   chartsRoute,
+  flowsRoute,
 } = route;
 
 import dotenv from "dotenv";
@@ -51,6 +52,7 @@ const routes = app
   .route("/services", servicesRoute)
   .route("/docs", docsRoute)
   .route("/charts", chartsRoute)
+  .route("/flows", flowsRoute)
   .route("/data", dataRoute);
 
 app.get("*", serveStatic({ root: "./static" }));

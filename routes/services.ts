@@ -12,7 +12,7 @@ import {
 } from "../schemas/servicesSchema";
 import { db } from "../db/db";
 import { eq, sql, and } from "drizzle-orm";
-import { Assistants, Doctors, Expences, Users } from "../db/schemas";
+import { Assistants, Doctors, Flows } from "../db/schemas";
 
 export const servicesRoute = new Hono<{ Variables: authVariables }>()
 
@@ -31,8 +31,12 @@ export const servicesRoute = new Hono<{ Variables: authVariables }>()
     const data = c.req.valid("json");
 
     const assistant = await db
-      .select({ assistantId: Doctors.assistantId })
+      .select({
+        assistantId: Doctors.assistantId,
+        assistantUserId: Assistants.userId,
+      })
       .from(Doctors)
+      .innerJoin(Assistants, eq(Assistants.id, Doctors.assistantId))
       .where(eq(Doctors.id, doctorId));
 
     if (!assistant[0]?.assistantId)
@@ -40,6 +44,19 @@ export const servicesRoute = new Hono<{ Variables: authVariables }>()
         { success: false, error: "No tienes un asistente definido" },
         401,
       );
+
+    await db
+      .insert(Flows)
+      .values({
+        flow: "add",
+        description: "change",
+        doctorId: doctorId,
+        chargeTo: assistant[0].assistantUserId,
+        total: data.amount,
+        cordobas: data.amount,
+        dollars: 0,
+      })
+      .returning({ id: Flows.id });
 
     await db
       .update(Assistants)
@@ -51,6 +68,7 @@ export const servicesRoute = new Hono<{ Variables: authVariables }>()
 
     return c.json({ success: true });
   })
+  //get especific data
   .get("/moneyDoctor", async (c) => {
     const user = c.get("user");
     if (!user || user.role !== "DOCTOR") {
@@ -84,13 +102,15 @@ export const servicesRoute = new Hono<{ Variables: authVariables }>()
     // Consulta para obtener los gastos del doctor (userId del doctor)
     const doctorExpensesQuery = await db
       .select({
-        doctorExpenses: sql<number>`SUM(${Expences.total})`,
+        doctorExpenses: sql<number>`SUM(${Flows.total})`,
       })
-      .from(Expences)
+      .from(Flows)
       .where(
         and(
-          eq(Expences.userId, user.id), // Gastos del doctor basados en su userId
-          sql`DATE(${Expences.createdAt}) = CURRENT_DATE`,
+          eq(Flows.doctorId, doctorId),
+          eq(Flows.flow, "expense"),
+          eq(Flows.chargeTo, user.id),
+          sql`DATE(${Flows.createdAt}) = CURRENT_DATE`,
         ),
       );
 
@@ -98,14 +118,16 @@ export const servicesRoute = new Hono<{ Variables: authVariables }>()
     const assistantExpensesQuery = assistantId
       ? await db
           .select({
-            assistantExpenses: sql<number>`SUM(${Expences.total})`,
+            assistantExpenses: sql<number>`SUM(${Flows.total})`,
           })
-          .from(Expences)
-          .innerJoin(Assistants, eq(Expences.userId, Assistants.userId))
+          .from(Flows)
+          .innerJoin(Assistants, eq(Flows.chargeTo, Assistants.userId))
           .where(
             and(
-              eq(Assistants.id, assistantId), // Gastos de la asistente basados en su userId
-              sql`DATE(${Expences.createdAt}) = CURRENT_DATE`,
+              eq(Flows.doctorId, doctorId),
+              eq(Flows.flow, "expense"),
+              eq(Assistants.id, assistantId),
+              sql`DATE(${Flows.createdAt}) = CURRENT_DATE`,
             ),
           )
       : [{ assistantExpenses: 0 }]; // Si no hay asistente, 0 gastos
@@ -139,9 +161,15 @@ export const servicesRoute = new Hono<{ Variables: authVariables }>()
       },
     });
   })
+  //get especific data
   .get("/moneyAssistant", async (c) => {
     const user = c.get("user");
     if (!user || user.role !== "ASSISTANT") {
+      return c.json({ success: false, data: null }, 401);
+    }
+
+    const doctorId = await doctorIdentification(user.id, user.role);
+    if (!doctorId) {
       return c.json({ success: false, data: null }, 401);
     }
 
@@ -167,14 +195,16 @@ export const servicesRoute = new Hono<{ Variables: authVariables }>()
     const assistantExpensesQuery = assistantId
       ? await db
           .select({
-            assistantExpenses: sql<number>`SUM(${Expences.total})`,
+            assistantExpenses: sql<number>`SUM(${Flows.total})`,
           })
-          .from(Expences)
-          .innerJoin(Assistants, eq(Expences.userId, Assistants.userId))
+          .from(Flows)
+          .innerJoin(Assistants, eq(Flows.chargeTo, Assistants.userId))
           .where(
             and(
-              eq(Assistants.id, assistantId), // Gastos de la asistente basados en su userId
-              sql`DATE(${Expences.createdAt}) = CURRENT_DATE`,
+              eq(Flows.doctorId, doctorId),
+              eq(Flows.flow, "expense"),
+              eq(Assistants.id, assistantId),
+              sql`DATE(${Flows.createdAt}) = CURRENT_DATE`,
             ),
           )
       : [{ assistantExpenses: 0 }]; // Si no hay asistente, 0 gastos
@@ -199,40 +229,17 @@ export const servicesRoute = new Hono<{ Variables: authVariables }>()
       },
     });
   })
-  //obtener el tipo de cambio
-  .get("/rate", async (c) => {
-    const user = c.get("user");
-    if (!user) return c.json({ success: false, data: null }, 401);
-    if (user.role === "ADMIN")
-      return c.json({ success: false, data: null }, 401);
-
-    const doctorId = await doctorIdentification(user.id, user.role);
-    if (!doctorId) {
-      return c.json({ success: false, data: null }, 401);
-    }
-
-    const result = await db
-      .select({
-        rate: Doctors.rate,
-        cordobas: Doctors.cordobas,
-        cordobasA: Assistants.cordobas,
-      })
-      .from(Doctors)
-      .innerJoin(Assistants, eq(Doctors.assistantId, Assistants.id))
-      .where(eq(Doctors.id, doctorId));
-
-    const rate = result[0]?.rate ?? 0;
-    const cordobas = result[0]?.cordobas ?? 0;
-    const cordobasA = result[0]?.cordobasA ?? 0;
-
-    return c.json({ success: true, data: { rate, cordobas, cordobasA } });
-  })
   //arqueo
   .patch("/conciliation", async (c) => {
     const user = c.get("user");
     if (!user) return c.json({ success: false, error: "unauthorized" }, 401);
     if (user.role !== "DOCTOR")
       return c.json({ success: false, error: "unauthorized" }, 401);
+
+    const doctorId = await doctorIdentification(user.id, user.role);
+    if (!doctorId) {
+      return c.json({ success: false, error: "unatorized" });
+    }
 
     const assistantId = await assistantIdentification(user.role, user.id);
     if (!assistantId) {
@@ -273,9 +280,19 @@ export const servicesRoute = new Hono<{ Variables: authVariables }>()
       });
     }
 
-    const setTotalCordobas = maxCordobas - result.data.cordobas;
-    const setTotalDolares = maxDolares - result.data.dolares;
+    const setTotalCordobas = maxCordobas - result.data.cordobas ?? 0;
+    const setTotalDolares = maxDolares - result.data.dolares ?? 0;
     const total = setTotalCordobas + setTotalDolares * currentRate;
+
+    await db.insert(Flows).values({
+      flow: "conciliation",
+      description: "conciliation",
+      doctorId: doctorId,
+      chargeTo: user.id,
+      total: total,
+      cordobas: result.data.cordobas ?? 0,
+      dollars: result.data.dolares ?? 0,
+    });
 
     await db
       .update(Assistants)
@@ -287,6 +304,34 @@ export const servicesRoute = new Hono<{ Variables: authVariables }>()
       .where(eq(Assistants.id, assistantId));
 
     return c.json({ success: true, error: "" }, 200);
+  })
+  //obtener el tipo de cambio
+  .get("/rate", async (c) => {
+    const user = c.get("user");
+    if (!user) return c.json({ success: false, data: null }, 401);
+    if (user.role === "ADMIN")
+      return c.json({ success: false, data: null }, 401);
+
+    const doctorId = await doctorIdentification(user.id, user.role);
+    if (!doctorId) {
+      return c.json({ success: false, data: null }, 401);
+    }
+
+    const result = await db
+      .select({
+        rate: Doctors.rate,
+        cordobas: Doctors.cordobas,
+        cordobasA: Assistants.cordobas,
+      })
+      .from(Doctors)
+      .innerJoin(Assistants, eq(Doctors.assistantId, Assistants.id))
+      .where(eq(Doctors.id, doctorId));
+
+    const rate = result[0]?.rate ?? 0;
+    const cordobas = result[0]?.cordobas ?? 0;
+    const cordobasA = result[0]?.cordobasA ?? 0;
+
+    return c.json({ success: true, data: { rate, cordobas, cordobasA } });
   })
   //rate
   .patch("/rate", zValidator("json", rateSchema), async (c) => {
@@ -308,11 +353,17 @@ export const servicesRoute = new Hono<{ Variables: authVariables }>()
     return c.json({ success: true }, 200);
   })
   // agregar un nuevo expence for assistant
-  .patch("/expencesAssistant", async (c) => {
+  .post("/expencesAssistant", async (c) => {
     const user = c.get("user");
     if (!user) return c.json({ success: false, message: "Unauthorized" }, 401);
-    if (user.role === "ADMIN")
+    if (user.role !== "ASSISTANT")
       return c.json({ success: false, message: "Unauthorized" }, 401);
+
+    const doctorId = await doctorIdentification(user.id, user.role);
+
+    if (!doctorId) {
+      return c.json({ success: false, message: "unAutorized" }, 401);
+    }
 
     const assistantId = await assistantIdentification(user.role, user.id);
     if (!assistantId) {
@@ -371,14 +422,6 @@ export const servicesRoute = new Hono<{ Variables: authVariables }>()
     const setTotalDolares = maxDolares - result.data.dollars;
     const total = setTotalCordobas + setTotalDolares * currentRate;
 
-    await db.insert(Expences).values({
-      cordobas: result.data.cordobas,
-      dollars: result.data.dollars,
-      description: result.data.description,
-      total: result.data.cordobas + result.data.dollars * currentRate,
-      userId: user.id,
-    });
-
     // Verificar que no se intenten dejar fondos negativos
     if (setTotalCordobas < 0 || setTotalDolares < 0) {
       return c.json(
@@ -386,6 +429,20 @@ export const servicesRoute = new Hono<{ Variables: authVariables }>()
         400,
       );
     }
+
+    await db
+      .insert(Flows)
+      .values({
+        flow: "expense",
+        description: result.data.description,
+        doctorId: doctorId,
+        chargeTo: user.id,
+        total: result.data.cordobas + result.data.dollars * currentRate,
+        cordobas: result.data.cordobas,
+        dollars: result.data.dollars,
+      })
+      .returning({ id: Flows.id });
+
     // Actualizar la base de datos
     await db
       .update(Assistants)
@@ -401,6 +458,102 @@ export const servicesRoute = new Hono<{ Variables: authVariables }>()
       message: "Gastos actualizados correctamente",
     });
   })
+  .post("/expencesDoctor", async (c) => {
+    const user = c.get("user");
+    if (!user) return c.json({ success: false, message: "Unauthorized" }, 401);
+    if (user.role !== "DOCTOR")
+      return c.json({ success: false, message: "Unauthorized" }, 401);
+
+    const doctorId = await doctorIdentification(user.id, user.role);
+
+    if (!doctorId) {
+      return c.json({ success: false, message: "unAutorized" }, 401);
+    }
+
+    const doctor = await db
+      .select({
+        cordobas: Doctors.cordobas,
+        dolars: Doctors.dollars,
+        rate: Doctors.rate,
+      })
+      .from(Doctors)
+      .where(eq(Doctors.id, doctorId));
+
+    // Verificación de fondos actuales
+    const maxDolares = doctor[0]?.dolars ?? 0;
+    const maxCordobas = doctor[0]?.cordobas ?? 0;
+
+    if (maxDolares === 0 && maxCordobas === 0) {
+      console.error("sin fondos");
+      return c.json({ success: false, message: "Fondos insuficientes" }, 500);
+    }
+
+    // Verificar la tasa de cambio
+    const currentRate = doctor[0]?.rate ?? 0;
+    if (currentRate === 0) {
+      return c.json(
+        { success: false, message: "Tasa de cambio inválida" },
+        500,
+      );
+    }
+
+    // Validar el cuerpo de la solicitud
+    const body = await c.req.json();
+    const schema = generateExpencesSchema(maxCordobas, maxDolares);
+    const result = schema.safeParse(body);
+
+    if (!result.success) {
+      return c.json(
+        {
+          success: false,
+          message: "Datos inválidos",
+          errors: result.error.errors,
+        },
+        400,
+      );
+    }
+
+    // Calcular los nuevos fondos
+    const setTotalCordobas = maxCordobas - result.data.cordobas;
+    const setTotalDolares = maxDolares - result.data.dollars;
+    const total = setTotalCordobas + setTotalDolares * currentRate;
+
+    // Verificar que no se intenten dejar fondos negativos
+    if (setTotalCordobas < 0 || setTotalDolares < 0) {
+      return c.json(
+        { success: false, message: "Fondos insuficientes para esta operación" },
+        400,
+      );
+    }
+
+    await db
+      .insert(Flows)
+      .values({
+        flow: "expense",
+        description: result.data.description,
+        doctorId: doctorId,
+        chargeTo: user.id,
+        total: result.data.cordobas + result.data.dollars * currentRate,
+        cordobas: result.data.cordobas,
+        dollars: result.data.dollars,
+      })
+      .returning({ id: Flows.id });
+
+    // Actualizar la base de datos
+    await db
+      .update(Doctors)
+      .set({
+        dollars: setTotalDolares,
+        cordobas: setTotalCordobas,
+        total: total,
+      })
+      .where(eq(Doctors.id, doctorId));
+
+    return c.json({
+      success: true,
+      message: "Gastos actualizados correctamente",
+    });
+  })
   //obtner los gastos de el asistente
   .get("/expensesAssistant", async (c) => {
     const user = c.get("user");
@@ -408,6 +561,11 @@ export const servicesRoute = new Hono<{ Variables: authVariables }>()
       return c.json({ success: false, data: null, error: "unauthorized" }, 401);
     if (user.role === "ADMIN") {
       return c.json({ success: false, data: null, error: "unauthorized" }, 401);
+    }
+
+    const doctorId = await doctorIdentification(user.id, user.role);
+    if (!doctorId) {
+      return c.json({ success: false, message: "unAutorized" }, 401);
     }
 
     // Get assistant identification based on user role and ID
@@ -443,19 +601,22 @@ export const servicesRoute = new Hono<{ Variables: authVariables }>()
     // Fetch expenses for the user for the specified date
     const result = await db
       .select({
-        description: Expences.description,
-        cordobas: Expences.cordobas,
-        dollars: Expences.dollars,
-        total: Expences.total,
-        date: Expences.createdAt,
+        description: Flows.description,
+        cordobas: Flows.cordobas,
+        dollars: Flows.dollars,
+        total: Flows.total,
+        date: Flows.createdAt,
       })
-      .from(Expences)
+      .from(Flows)
       .where(
         and(
-          eq(Expences.userId, userIdentification[0].userId),
-          sql`DATE(${Expences.createdAt}) = ${dateQuery}`,
+          eq(Flows.chargeTo, userIdentification[0].userId),
+          eq(Flows.doctorId, doctorId),
+          eq(Flows.flow, "expense"),
+          sql`DATE(${Flows.createdAt}) = ${dateQuery}`,
         ),
       );
+    Flows;
 
     return c.json({ success: true, data: result, error: "" });
   })
@@ -464,6 +625,12 @@ export const servicesRoute = new Hono<{ Variables: authVariables }>()
     const user = c.get("user");
     if (!user) return c.json({ success: false, data: null }, 401);
     if (user.role === "ADMIN") {
+      return c.json({ success: false, data: null }, 401);
+    }
+
+    const doctorId = await doctorIdentification(user.id, user.role);
+
+    if (!doctorId) {
       return c.json({ success: false, data: null }, 401);
     }
 
@@ -476,17 +643,19 @@ export const servicesRoute = new Hono<{ Variables: authVariables }>()
     // Fetch expenses for the user for the specified date
     const result = await db
       .select({
-        description: Expences.description,
-        cordobas: Expences.cordobas,
-        dollars: Expences.dollars,
-        total: Expences.total,
-        date: Expences.createdAt,
+        description: Flows.description,
+        cordobas: Flows.cordobas,
+        dollars: Flows.dollars,
+        total: Flows.total,
+        date: Flows.createdAt,
       })
-      .from(Expences)
+      .from(Flows)
       .where(
         and(
-          eq(Expences.userId, user.id),
-          sql`DATE(${Expences.createdAt}) = ${dateQuery}`,
+          eq(Flows.chargeTo, user.id),
+          eq(Flows.doctorId, doctorId),
+          eq(Flows.flow, "expense"),
+          sql`DATE(${Flows.createdAt}) = ${dateQuery}`,
         ),
       );
 

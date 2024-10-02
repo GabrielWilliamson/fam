@@ -1,3 +1,12 @@
+ entrar a
+ psqlpsql -U fameduser -d famed
+
+
+ listar las tablas
+ \dt
+
+
+
 # database backup
 
 pg_dump -U postgres -h localhost -F c -b -v -f backup.dump famed
@@ -15,7 +24,7 @@ pg_restore -U postgres -d famed --clean --no-owner /home/gabriel/Desktop/backup.
 gzip backup.dump
 
 #clear database
-psql -U $DB_USER -d $DB_NAME -c "
+psql -U fameduser -d famed -c "
 DO \$\$
 DECLARE
 r RECORD;

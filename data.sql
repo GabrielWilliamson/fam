@@ -1,4 +1,28 @@
--- Active: 1723649901072@@127.0.0.1@5432@famed@public
+
+INSERT INTO users (
+    name,
+    password,
+    email,
+    "emailVerifiedAt",
+    image,
+    role
+)
+VALUES (
+    'Gabriel Duarte (Admin)',
+    '$2b$10$7ZBKOOXU8jy4UaUt6SZUzuBoIaTpr/g/MNkZiKrdS61xbKLiqj6rO',
+    'gabrielwilliamson92@gmail.com',
+    '2024-02-10 22:47:14.056',
+    NULL,
+    'ADMIN'
+);
+
+
+-- list tables
+-- \dt
+
+
+
+
 --Insert admin in users table
 INSERT INTO
     public."users" (
@@ -113,14 +137,3 @@ VALUES (
                 "email" = 'assistant2@gmail.com'
         )
     );
-
-
-    -- add banks
-    insert into
-      banks (name)
-    values
-      ('BAC'),
-      ('BAMPRO'),
-      ('LAFISE Bancentro'),
-      ('Ficohsa'),
-      ('Avanz')

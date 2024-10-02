@@ -30,9 +30,8 @@ export const UserRelations = relations(Users, ({ one, many }) => ({
   session: one(Sessions),
   doctor: one(Doctors),
   assistant: one(Assistants),
-  expences: many(Expences),
+  flows: many(Flows),
 }));
-
 export const Sessions = pgTable("sessions", {
   id: text("id").primaryKey(),
   userId: uuid("userId")
@@ -42,7 +41,6 @@ export const Sessions = pgTable("sessions", {
     mode: "date",
   }).notNull(),
 });
-
 export const Doctors = pgTable("doctors", {
   id: uuid("id").primaryKey().defaultRandom(),
   userId: uuid("userId")
@@ -66,6 +64,7 @@ export const DoctorRelations = relations(Doctors, ({ many, one }) => ({
   queries: many(Queries),
   dates: many(Dates),
   drugs: many(Drugs),
+  bankAccounts: many(BankAccounts),
 }));
 export const Assistants = pgTable("assistants", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -80,18 +79,6 @@ export const AssistantRelations = relations(Assistants, ({ many, one }) => ({
   user: one(Users, { fields: [Assistants.id], references: [Users.id] }),
   doctor: one(Doctors, { fields: [Assistants.id], references: [Doctors.id] }),
 }));
-export const Expences = pgTable("expences", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  description: text("description").notNull(),
-  total: doublePrecision("total").notNull(),
-  dollars: doublePrecision("dollars").notNull(),
-  cordobas: doublePrecision("cordobas").notNull(),
-  userId: uuid("userId")
-    .notNull()
-    .notNull()
-    .references(() => Users.id),
-  createdAt: timestamp("createdAt").notNull().defaultNow(),
-});
 export const Patients = pgTable("patients", {
   id: uuid("id").primaryKey().defaultRandom(),
   name: text("name").notNull(),
@@ -155,13 +142,10 @@ export const Queries = pgTable("queries", {
   observations: text("observations"),
   diag: text("diag"),
   status: text("status"),
-  dateId: uuid("dateId")
-    .notNull()
-    .references(() => Dates.id),
+  dateId: uuid("dateId").references(() => Dates.id),
   price: doublePrecision("price").default(0),
-  collector: uuid("collector"),
-  bank: uuid("bank").references(() => Banks.id),
   emergency: boolean("emergency").default(false),
+  flowId: uuid("flowId").references(() => Flows.id),
   doctorId: uuid("doctorId")
     .notNull()
     .references(() => Doctors.id),
@@ -237,8 +221,38 @@ export const Exams = pgTable("exams", {
   exSup: text("exSup"),
   createdAt: timestamp("createdAt").notNull().defaultNow(),
 });
-export const Banks = pgTable("banks", {
+
+export const Currency = pgEnum("currency", ["dol", "cor"]);
+export const Flow = pgEnum("flow", [
+  "income",
+  "expense",
+  "conciliation",
+  "add",
+]);
+
+export const BankAccounts = pgTable("bankAccounts", {
   id: uuid("id").primaryKey().defaultRandom(),
   name: text("name").notNull(),
+  currency: Currency("currency").notNull(),
+  color: text("color").notNull(),
+  doctorId: uuid("doctorId")
+    .notNull()
+    .references(() => Doctors.id),
+  created: timestamp("created").notNull().defaultNow(),
+});
+export const Flows = pgTable("flows", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  doctorId: uuid("doctorId")
+    .notNull()
+    .references(() => Doctors.id),
+  chargeTo: uuid("userId")
+    .notNull()
+    .references(() => Users.id),
+  total: doublePrecision("total").notNull(),
+  cordobas: doublePrecision("cordobas").notNull(),
+  dollars: doublePrecision("dollars").notNull(),
+  description: text("description").notNull(),
+  flow: Flow("flow").notNull(),
+  bankAccountId: uuid("bankAccountId").references(() => BankAccounts.id),
   createdAt: timestamp("createdAt").notNull().defaultNow(),
 });

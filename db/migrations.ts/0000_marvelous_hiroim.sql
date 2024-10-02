@@ -1,4 +1,16 @@
 DO $$ BEGIN
+ CREATE TYPE "public"."currency" AS ENUM('dol', 'cor');
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
+DO $$ BEGIN
+ CREATE TYPE "public"."flow" AS ENUM('income', 'expense', 'conciliation', 'add');
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
+DO $$ BEGIN
  CREATE TYPE "public"."specialties" AS ENUM('PEDIATRIA', 'GENERAL');
 EXCEPTION
  WHEN duplicate_object THEN null;
@@ -18,10 +30,12 @@ CREATE TABLE IF NOT EXISTS "assistants" (
 	"cordobas" double precision DEFAULT 0 NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE IF NOT EXISTS "banks" (
+CREATE TABLE IF NOT EXISTS "bankAccounts" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"name" text NOT NULL,
-	"createdAt" timestamp DEFAULT now() NOT NULL
+	"currency" "currency" NOT NULL,
+	"doctorId" uuid NOT NULL,
+	"created" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "dates" (
@@ -79,16 +93,6 @@ CREATE TABLE IF NOT EXISTS "exams" (
 	"createdAt" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE IF NOT EXISTS "expences" (
-	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-	"description" text NOT NULL,
-	"total" double precision NOT NULL,
-	"dollars" double precision NOT NULL,
-	"cordobas" double precision NOT NULL,
-	"userId" uuid NOT NULL,
-	"createdAt" timestamp DEFAULT now() NOT NULL
-);
---> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "files" (
 	"id" text PRIMARY KEY NOT NULL,
 	"patientId" uuid NOT NULL,
@@ -96,6 +100,19 @@ CREATE TABLE IF NOT EXISTS "files" (
 	"hereditary" text[],
 	"apnp" json,
 	"app" json,
+	"createdAt" timestamp DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE IF NOT EXISTS "flows" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"doctorId" uuid NOT NULL,
+	"userId" uuid NOT NULL,
+	"total" double precision NOT NULL,
+	"cordobas" double precision NOT NULL,
+	"dollars" double precision NOT NULL,
+	"description" text NOT NULL,
+	"flow" "flow" NOT NULL,
+	"bankAccountId" uuid,
 	"createdAt" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
@@ -138,11 +155,10 @@ CREATE TABLE IF NOT EXISTS "queries" (
 	"observations" text,
 	"diag" text,
 	"status" text,
-	"dateId" uuid NOT NULL,
+	"dateId" uuid,
 	"price" double precision DEFAULT 0,
-	"collector" uuid,
-	"bank" uuid,
 	"emergency" boolean DEFAULT false,
+	"flowId" uuid,
 	"doctorId" uuid NOT NULL,
 	"createdAt" timestamp DEFAULT now() NOT NULL
 );
@@ -186,6 +202,12 @@ EXCEPTION
 END $$;
 --> statement-breakpoint
 DO $$ BEGIN
+ ALTER TABLE "bankAccounts" ADD CONSTRAINT "bankAccounts_doctorId_doctors_id_fk" FOREIGN KEY ("doctorId") REFERENCES "public"."doctors"("id") ON DELETE no action ON UPDATE no action;
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
+DO $$ BEGIN
  ALTER TABLE "dates" ADD CONSTRAINT "dates_doctorId_doctors_id_fk" FOREIGN KEY ("doctorId") REFERENCES "public"."doctors"("id") ON DELETE no action ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
@@ -216,13 +238,25 @@ EXCEPTION
 END $$;
 --> statement-breakpoint
 DO $$ BEGIN
- ALTER TABLE "expences" ADD CONSTRAINT "expences_userId_users_id_fk" FOREIGN KEY ("userId") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;
+ ALTER TABLE "files" ADD CONSTRAINT "files_patientId_patients_id_fk" FOREIGN KEY ("patientId") REFERENCES "public"."patients"("id") ON DELETE no action ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;
 --> statement-breakpoint
 DO $$ BEGIN
- ALTER TABLE "files" ADD CONSTRAINT "files_patientId_patients_id_fk" FOREIGN KEY ("patientId") REFERENCES "public"."patients"("id") ON DELETE no action ON UPDATE no action;
+ ALTER TABLE "flows" ADD CONSTRAINT "flows_doctorId_doctors_id_fk" FOREIGN KEY ("doctorId") REFERENCES "public"."doctors"("id") ON DELETE no action ON UPDATE no action;
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
+DO $$ BEGIN
+ ALTER TABLE "flows" ADD CONSTRAINT "flows_userId_users_id_fk" FOREIGN KEY ("userId") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
+DO $$ BEGIN
+ ALTER TABLE "flows" ADD CONSTRAINT "flows_bankAccountId_bankAccounts_id_fk" FOREIGN KEY ("bankAccountId") REFERENCES "public"."bankAccounts"("id") ON DELETE no action ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;
@@ -264,7 +298,7 @@ EXCEPTION
 END $$;
 --> statement-breakpoint
 DO $$ BEGIN
- ALTER TABLE "queries" ADD CONSTRAINT "queries_bank_banks_id_fk" FOREIGN KEY ("bank") REFERENCES "public"."banks"("id") ON DELETE no action ON UPDATE no action;
+ ALTER TABLE "queries" ADD CONSTRAINT "queries_flowId_flows_id_fk" FOREIGN KEY ("flowId") REFERENCES "public"."flows"("id") ON DELETE no action ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;

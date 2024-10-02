@@ -1,4 +1,10 @@
-import type { Session, User } from "lucia";
+import type { Session, User as UserL } from "lucia";
+
+interface User extends UserL {
+  email: string;
+  id: string;
+  role: string;
+}
 
 export type authVariables = {
   user: User | null;

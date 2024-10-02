@@ -1,6 +1,6 @@
 {
-  "id": "296cd2ff-a4e0-4366-b223-c9b59b8502da",
-  "prevId": "00000000-0000-0000-0000-000000000000",
+  "id": "b60ba2b0-4298-4e9b-a38d-8c71531fb47a",
+  "prevId": "296cd2ff-a4e0-4366-b223-c9b59b8502da",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -83,6 +83,12 @@
           "name": "currency",
           "type": "currency",
           "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "color": {
+          "name": "color",
+          "type": "text",
           "primaryKey": false,
           "notNull": true
         },

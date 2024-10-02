@@ -16,23 +16,11 @@ export const interrogationSchema = z.object({
   interrogation: z.string().max(700, { message: "Máximo 700 caracteres" }),
 });
 
-export const priceSchema = z.object({
-  price: z.number().positive(),
-  chargePersonally: z.boolean(),
-  paymentMethod: z.enum(["cash", "transfer"]).nullable(),
-  bank: z.string().nullable(),
-  cordobas: z.number().nonnegative().nullable(),
-  dolares: z.number().nonnegative().nullable(),
-  change: z.number().nonnegative().nullable(),
-});
-
 export const chargeSchema = z.object({
   cordobas: z.number(),
   dolares: z.number(),
   change: z.number(),
 });
-
-export type price = z.infer<typeof priceSchema>;
 
 export type interrogation = z.infer<typeof interrogationSchema>;
 

@@ -13,14 +13,16 @@ const roleSchema = z.object({
     "patients",
     "upcoming",
     "general",
+    "session",
     "services",
     "dates",
     "pediatric",
     "profile",
     "reset",
     "drugs",
+    "sms",
   ]),
-  ASSISTANT: z.enum(["patients", "profile", "reset"]),
+  ASSISTANT: z.enum(["patients", "profile", "reset", "sms"]),
   ADMIN: z.enum(["profile", "reset", "users", "settings"]),
 });
 
