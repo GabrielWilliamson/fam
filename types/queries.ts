@@ -36,4 +36,5 @@ export type querieBase = {
 export type resource = {
   id: string;
   url: string;
+  name: string;
 };

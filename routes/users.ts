@@ -1,8 +1,9 @@
 import { Hono } from "hono";
 import { zValidator } from "@hono/zod-validator";
 import type { authVariables } from "../types/auth";
+import CryptoHasher from "bun";
 import { db } from "../db/db";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { changeSchema, userSchema } from "../schemas/usersSchema";
 import hashPassword from "../lib/hash";
 import { sendVerificationEmail } from "../lib/email";
@@ -11,6 +12,25 @@ import type { usersTable } from "../types/users";
 import { z } from "zod";
 import bcrypt from "bcryptjs";
 import { generateEmailVerificationToken } from "../lib/hash";
+import { join, extname } from "path";
+import { existsSync } from "fs";
+import { unlink } from "node:fs/promises";
+
+const allowedExtensions = [".jpg", ".jpeg", ".png", ".gif", ".webp"];
+
+const fileSchema = z.object({
+  file: z
+    .instanceof(File)
+    .refine(
+      (file) => ["image/jpeg", "image/png", "image/webp"].includes(file.type),
+      {
+        message: "El archivo debe ser una imagen JPEG, PNG o WebP",
+      },
+    )
+    .refine((file) => file.size <= 1024 * 1024 * 3, {
+      message: "El archivo no debe superar los 3MB",
+    }),
+});
 
 const name = z.object({ name: userSchema.shape.name });
 const email = z.object({ email: userSchema.shape.email });
@@ -28,6 +48,18 @@ const password = z
     message: "La clave nueva no puede ser igual a la actual",
     path: ["new"],
   });
+
+type PaginatedResponse = {
+  success: boolean;
+  error: string;
+  data: usersTable[];
+  pagination: {
+    page: number;
+    pageSize: number;
+    totalCount: number;
+    totalPages: number;
+  };
+};
 
 export const usersRoute = new Hono<{ Variables: authVariables }>()
 
@@ -142,22 +174,33 @@ export const usersRoute = new Hono<{ Variables: authVariables }>()
 
   .get("/", async (c) => {
     const myuser = c.get("user");
-    if (!myuser) return c.json({ list: null }, 401);
-    if (myuser.role !== "ADMIN") return c.json({ list: null }, 401);
+    if (!myuser) return c.json({ data: null }, 401);
+    if (myuser.role !== "ADMIN") return c.json({ data: null }, 401);
 
-    const list = await db.query.Users.findMany({
-      columns: {
-        id: true,
-        name: true,
-        email: true,
-        status: true,
-        emailVerifiedAt: true,
-        role: true,
-        image: true,
+    const page = parseInt(c.req.query("page") || "1");
+    const pageSize = parseInt(c.req.query("pageSize") || "10");
+    const offset = (page - 1) * pageSize;
+
+    const [list, total] = await Promise.all([
+      db.select().from(Users).offset(offset).limit(pageSize),
+      db.select({ count: sql<number>`cast(count(*) as integer)` }).from(Users),
+    ]);
+
+    const totalCount = total[0].count;
+
+    const response: PaginatedResponse = {
+      success: true,
+      error: "",
+      data: list as usersTable[],
+      pagination: {
+        page,
+        pageSize,
+        totalCount,
+        totalPages: Math.ceil(totalCount / pageSize),
       },
-    });
+    };
 
-    return c.json({ list: list as usersTable[] });
+    return c.json({ data: response });
   })
 
   .patch("/change", zValidator("json", changeSchema), async (c) => {
@@ -258,4 +301,82 @@ export const usersRoute = new Hono<{ Variables: authVariables }>()
       .where(eq(Users.id, myuser.id));
 
     return c.json({ success: true, error: null });
+  })
+
+  .post("/picture", zValidator("form", fileSchema), async (c) => {
+    const user = c.get("user");
+    if (!user) return c.json({ success: false, error: "unauthorized" }, 401);
+
+    try {
+      const { file } = c.req.valid("form");
+
+      const picturesDir = join(process.cwd(), "pictures"); // Usa una ruta absoluta para el directorio de imágenes
+
+      // Borrar la imagen anterior solo si existe
+      if (user.image !== null) {
+        const previousImagePath = join(picturesDir, user.image); // Ruta absoluta de la imagen anterior
+        try {
+          await unlink(previousImagePath);
+        } catch (error) {
+          console.error("Error al eliminar la imagen anterior:", error);
+        }
+      }
+
+      const extension = file.name.split(".").pop();
+      const name = CryptoHasher.hash(file.name, 32).toString();
+      const fileName = `${name}.${extension}`;
+
+      // Guarda (o sobrescribe) el archivo en la carpeta 'pictures'
+      const filePath = join(picturesDir, fileName); // Ruta absoluta para guardar el archivo
+      await Bun.write(filePath, await file.arrayBuffer());
+
+      // Actualizar la imagen en la base de datos
+      await db
+        .update(Users)
+        .set({ image: fileName })
+        .where(eq(Users.id, user.id));
+
+      return c.json({ success: true, error: "" });
+    } catch (error) {
+      console.error("Error al guardar el archivo:", error);
+      return c.json(
+        { success: false, error: "Error al procesar el archivo" },
+        500,
+      );
+    }
+  })
+
+  .get("/pictures", async (c) => {
+    const user = c.get("user");
+
+    if (user === null)
+      return c.json({ success: false, error: "No autorizado" }, 401);
+
+    if (user.image === null || user.image === "") {
+      return c.json({ success: true, error: "No imagen cargada" }, 200);
+    }
+
+    const filePath = join(__dirname, `../pictures/${user.image}`);
+
+    // Validate file extension
+    const fileExtension = extname(user.image).toLowerCase();
+    if (!allowedExtensions.includes(fileExtension)) {
+      return c.text("Invalid file type", 400);
+    }
+
+    // Validate that the file is within the pictures directory
+    const normalizedPath = join(filePath);
+    const picturesDir = join(__dirname, "../pictures");
+    if (!normalizedPath.startsWith(picturesDir)) {
+      return c.text("Access denied", 403);
+    }
+
+    // Check if file exists
+    if (!existsSync(filePath)) {
+      return c.text("File not found", 404);
+    }
+
+    // Serve the file
+    const file = Bun.file(filePath);
+    return new Response(file);
   });

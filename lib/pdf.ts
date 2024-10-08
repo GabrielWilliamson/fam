@@ -18,12 +18,12 @@ export function createPDFHeader(
   doc.addImage(base64Logo, "PNG", logoX, logoY, logoWidth, logoHeight);
 
   // Título de la clínica
-  doc.setFont("Courier", "bold");
+  doc.setFont("Helvetica", "bold");
   doc.setFontSize(14);
   doc.text("CLINICA DE ESPECIALIDADES FAMED", 105, 20, {
     align: "center",
   });
-  doc.setFont("Courier", "normal");
+  doc.setFont("Helvetica", "normal");
   doc.setFontSize(12);
   doc.text(reportName, 105, 27, { align: "center" });
 
@@ -38,7 +38,7 @@ export function title(doc: jsPDF, yPosition: number, data: string) {
     styles: {
       fontSize: 14,
       textColor: [0, 0, 0],
-      font: "courier",
+      font: "Helvetica",
     },
     pageBreak: "auto",
     theme: "plain",
@@ -47,7 +47,7 @@ export function title(doc: jsPDF, yPosition: number, data: string) {
 
 export function subTitle(doc: jsPDF, yPosition: number, data: string) {
   doc.setFontSize(12);
-  doc.setFont("courier", "normal");
+  doc.setFont("Helvetica", "normal");
   doc.setTextColor(0, 0, 0);
   doc.text(data, 20, yPosition);
 }

@@ -17,6 +17,7 @@ export function initializeLucia() {
         email: attributes.email,
         role: attributes.role,
         id: attributes.id,
+        image: attributes.image,
       };
     },
   });
@@ -33,4 +34,5 @@ interface DatabaseUserAttributes {
   email: string;
   id: string;
   role: string;
+  image: string | null;
 }

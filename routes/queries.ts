@@ -174,6 +174,11 @@ export const queriesRoute = new Hono<{ Variables: authVariables }>()
         idFile: Queries.idFile,
         emergency: Queries.emergency,
         name: Patients.name,
+        createdAt:
+          sql`to_char(${Queries.createdAt}, 'YYYY-MM-DD HH12:MI:SS AM')`.as(
+            "createdAt",
+          ),
+
         patientId: Patients.id,
       })
       .from(Queries)
@@ -232,7 +237,10 @@ export const queriesRoute = new Hono<{ Variables: authVariables }>()
       .innerJoin(Exams, eq(Exams.querieId, Queries.id))
       .where(and(eq(Queries.id, querieId), eq(Queries.doctorId, doctorId)));
 
-    return c.json({ success: true, data: QuerieData[0] as querieBase }, 200);
+    return c.json(
+      { success: true, error: "", data: QuerieData[0] as querieBase },
+      200,
+    );
   })
   //obtener el examen fisico
   .get("/exam", async (c) => {

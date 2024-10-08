@@ -21,6 +21,7 @@ const roleSchema = z.object({
     "reset",
     "drugs",
     "sms",
+    "queries",
   ]),
   ASSISTANT: z.enum(["patients", "profile", "reset", "sms"]),
   ADMIN: z.enum(["profile", "reset", "users", "settings"]),

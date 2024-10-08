@@ -8,6 +8,18 @@ import { join } from "path";
 import path from "path";
 import { sql } from "drizzle-orm";
 import { db } from "../db/db";
+import { z } from "zod";
+import { zValidator } from "@hono/zod-validator";
+
+const { DB_USER, DB_NAME } = process.env;
+
+const fileSchema = z.object({
+  file: z
+    .instanceof(File)
+    .refine((file) => ["application/gzip"].includes(file.type), {
+      message: "archivo debe ser un archivo .gz",
+    }),
+});
 
 export const dataRoute = new Hono<{ Variables: authVariables }>()
   //backup
@@ -41,7 +53,7 @@ export const dataRoute = new Hono<{ Variables: authVariables }>()
     }
   })
   //resotore
-  .post("/restore", async (c) => {
+  .post("/restore", zValidator("form", fileSchema), async (c) => {
     const user = c.get("user");
 
     if (!user || user.role !== "ADMIN") {
@@ -50,16 +62,41 @@ export const dataRoute = new Hono<{ Variables: authVariables }>()
         error: "unauthorized",
       });
     }
+    const { file } = c.req.valid("form");
+    const copysDir = join(process.cwd(), "copys");
 
     try {
+      //received file
+      console.info("Copying file...");
+      const filePath = join(copysDir, "copy.dump.gz");
+      await Bun.write(filePath, await file.arrayBuffer());
+
+      //unzip
+    } catch (error) {
+      console.error(`Error en el proceso de restauración:`);
+    }
+
+    try {
+      console.info("Uncompressing file...");
+      await uncompressBackup();
+
+      //validar que sea de type dump
+
+      console.info("truncated tables");
+      await truncateTables();
+
+      console.info("Restoring database...");
       await restoreDatabase();
+
+      console.info("delete copys");
+      await deleteAllFilesInDirectory(copysDir);
 
       return c.json({
         success: true,
         error: null,
       });
     } catch (error) {
-      console.error(`Error en el proceso de restauración:`);
+      console.error(`Error en el proceso de restauración:`, error);
       return c.json({
         success: false,
         error: "Error al realizar la restauración.",
@@ -67,36 +104,51 @@ export const dataRoute = new Hono<{ Variables: authVariables }>()
     }
   });
 
+function truncateTables(): Promise<void> {
+  return new Promise(async (resolve, reject) => {
+    const script = `
+    #!/bin/bash
+    DB_NAME="${DB_NAME}"
+    DB_USER="${DB_USER}"
+
+
+    # Truncar tablas en el esquema public
+    tables_public=$(psql -U "$DB_USER" -d "$DB_NAME" -t -c "SELECT tablename FROM pg_tables WHERE schemaname = 'public';")
+
+    for table in $tables_public; do
+      echo "Truncando tabla en public: $table"
+      psql -U "$DB_USER" -d "$DB_NAME" -c "TRUNCATE TABLE \"public\".\"$table\" CASCADE;" 2>/dev/null || echo "Tabla $table no existe, omitiendo."
+    done
+
+    # Truncar tablas en el esquema drizzle
+    psql -U "$DB_USER" -d "$DB_NAME" -c "TRUNCATE TABLE \"drizzle\".\"__drizzle_migrations\" CASCADE;" 2>/dev/null || echo "Tabla __drizzle_migrations no existe, omitiendo."
+
+    `;
+    exec(script, (error, stdout, stderr) => {
+      if (error) {
+        console.error(`Error truncated tables: ${error.message}`);
+        return reject(error);
+      }
+      if (stderr) {
+        console.log(`stderr ===> ${stderr}`);
+      }
+      console.log(`Output:\n${stdout}`);
+      resolve();
+    });
+  });
+}
+
 function restoreDatabase(): Promise<void> {
   return new Promise(async (resolve, reject) => {
-    //borrar todo
-    const data = await db.execute(
-      sql`SELECT tablename FROM pg_tables WHERE schemaname = 'public'`,
-    );
+    const copysDir = join(process.cwd(), "copys");
+    const fileCopyPath = join(copysDir, "copy.dump");
 
     const script = `
       #!/bin/bash
-      # Variables
-      DB_NAME="famed"
-      DB_USER="postgres"
-      DUMP_FILE="/home/gabriel/Desktop/backup.dump"
-
-      echo "Vaciar todas las tablas..."
-      psql -U $DB_USER -d $DB_NAME -c "
-            DO \$\$
-            DECLARE
-                r RECORD;
-            BEGIN
-                FOR r IN (SELECT tablename FROM pg_tables WHERE schemaname = 'public') LOOP
-                    EXECUTE 'TRUNCATE TABLE ' || quote_ident(r.tablename) || ' CASCADE';
-                END LOOP;
-            END
-            \$\$; "
-
-
-      echo "Restaurando nuevos datos..."
-      pg_restore -U $DB_USER -d $DB_NAME --clean --no-owner $DUMP_FILE
-    `;
+      DB_NAME="${DB_NAME}"
+      DB_USER="${DB_USER}"
+        pg_restore -U "${DB_USER}" -d "${DB_NAME}"  --clean   "${fileCopyPath}"
+      `;
 
     exec(script, (error, stdout, stderr) => {
       if (error) {
@@ -115,7 +167,7 @@ function restoreDatabase(): Promise<void> {
 function backupDatabase(): Promise<void> {
   return new Promise((resolve, reject) => {
     exec(
-      `pg_dump -U postgres -h localhost -F c -b -v -f ./backup/backup.dump famed`,
+      `pg_dump -U postgres -h localhost -F c -b -v -f ./backup/backup.dump ${DB_NAME}`,
       (error, stdout, stderr) => {
         if (error) {
           console.error(`Error al hacer el respaldo: ${error.message}`);
@@ -202,4 +254,28 @@ async function deleteAllFilesInDirectory(directoryPath: string): Promise<void> {
     console.error("Error al borrar los archivos:");
     throw error;
   }
+}
+
+async function uncompressBackup(): Promise<void> {
+  return new Promise((resolve, reject) => {
+    exec("gunzip ./copys/copy.dump.gz", (error, stdout, stderr) => {
+      if (error) {
+        console.error(
+          `Error al descomprimir la copia de seguridad: ${error.message}`,
+        );
+        return reject(new Error(`Error al descomprimir: ${error.message}`));
+      }
+
+      if (stderr) {
+        console.info(
+          `Advertencia al descomprimir la copia de seguridad: ${stderr}`,
+        );
+      }
+
+      console.log(
+        `Copia de seguridad descomprimida exitosamente. Output:\n${stdout}`,
+      );
+      resolve();
+    });
+  });
 }

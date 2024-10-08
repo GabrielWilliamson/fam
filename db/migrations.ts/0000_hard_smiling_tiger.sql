@@ -34,6 +34,7 @@ CREATE TABLE IF NOT EXISTS "bankAccounts" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"name" text NOT NULL,
 	"currency" "currency" NOT NULL,
+	"color" text NOT NULL,
 	"doctorId" uuid NOT NULL,
 	"created" timestamp DEFAULT now() NOT NULL
 );
@@ -148,7 +149,7 @@ CREATE TABLE IF NOT EXISTS "prescriptionsDetails" (
 CREATE TABLE IF NOT EXISTS "queries" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"idFile" text NOT NULL,
-	"resources" text[],
+	"resources" json[],
 	"interrogation" text,
 	"reason" text,
 	"history" text,

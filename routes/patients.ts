@@ -23,8 +23,9 @@ import {
   transformOrigin,
 } from "../lib/patients";
 import doctorIdentification from "../lib/identification";
-import type { z } from "zod";
 import { departmentsFull } from "../lib/locations";
+import { zValidator } from "@hono/zod-validator";
+import { z } from "zod";
 
 type ApiResponse<T = {}> = {
   success: boolean;
@@ -32,6 +33,20 @@ type ApiResponse<T = {}> = {
   action: "now" | "date" | null;
   patientId?: string;
 } & T;
+
+type PaginatedResponse = {
+  success: boolean;
+  error: string;
+  data: tablePatients[];
+  pagination: {
+    page: number;
+    pageSize: number;
+    totalCount: number;
+    totalPages: number;
+  };
+};
+
+const address = z.object({ address: pediatricSchema.shape.address });
 
 export const patientsRoute = new Hono<{ Variables: authVariables }>()
 
@@ -44,23 +59,37 @@ export const patientsRoute = new Hono<{ Variables: authVariables }>()
 
     if (!doctorId) return c.json({ success: false, data: [] }, 401);
 
-    const patients = await db
-      .select({
-        id: Patients.id,
-        name: Patients.name,
-        dni: Patients.dni,
-        date: Patients.date,
-        fileId: Files.id,
-        origin: Patients.address,
-        sex: Patients.sex,
-        phone: Patients.phone,
-        createdAt: Patients.createdAt,
-      })
-      .from(Patients)
-      .innerJoin(Files, eq(Patients.id, Files.patientId))
-      .where(eq(Patients.doctorId, doctorId));
+    const page = parseInt(c.req.query("page") || "1");
+    const pageSize = parseInt(c.req.query("pageSize") || "10");
 
-    const formattedPatients = patients.map((patient) => ({
+    const offset = (page - 1) * pageSize;
+
+    const [data, totalCountResult] = await Promise.all([
+      db
+        .select({
+          id: Patients.id,
+          name: Patients.name,
+          dni: Patients.dni,
+          date: Patients.date,
+          fileId: Files.id,
+          origin: Patients.address,
+          sex: Patients.sex,
+          phone: Patients.phone,
+          createdAt: Patients.createdAt,
+        })
+        .from(Patients)
+        .innerJoin(Files, eq(Patients.id, Files.patientId))
+        .where(eq(Patients.doctorId, doctorId))
+        .limit(pageSize)
+        .offset(offset),
+      db
+        .select({ count: sql<number>`cast(count(*) as integer)` })
+        .from(Patients)
+        .where(eq(Patients.doctorId, doctorId)),
+    ]);
+    const totalCount = totalCountResult[0].count;
+
+    const formattedPatients = data.map((patient) => ({
       id: patient.id,
       name: patient.name,
       dni: patient.dni,
@@ -72,12 +101,22 @@ export const patientsRoute = new Hono<{ Variables: authVariables }>()
       phone: patient.phone,
       createdAt: patient.createdAt.toString(),
     }));
-    if (formattedPatients.length === 0)
-      return c.json({ success: true, data: [] });
+
+    const response: PaginatedResponse = {
+      success: true,
+      error: "",
+      data: formattedPatients,
+      pagination: {
+        page,
+        pageSize,
+        totalCount,
+        totalPages: Math.ceil(totalCount / pageSize),
+      },
+    };
 
     return c.json({
       success: true,
-      data: formattedPatients as tablePatients[],
+      data: response,
     });
   })
 
@@ -111,9 +150,9 @@ export const patientsRoute = new Hono<{ Variables: authVariables }>()
           eq(Patients.doctorId, doctorId),
           or(
             sql`${Patients.name} ILIKE ${"%" + normalizedQuery + "%"}`,
-            sql`to_tsvector('simple', lower(${Patients.name})) @@ to_tsquery('simple', ${tsQuery})`
-          )
-        )
+            sql`to_tsvector('simple', lower(${Patients.name})) @@ to_tsquery('simple', ${tsQuery})`,
+          ),
+        ),
       )
       .innerJoin(Files, eq(Patients.id, Files.patientId))
       .limit(10);
@@ -131,7 +170,7 @@ export const patientsRoute = new Hono<{ Variables: authVariables }>()
           action: null,
           patientId: "",
         },
-        401
+        401,
       );
     }
 
@@ -144,7 +183,7 @@ export const patientsRoute = new Hono<{ Variables: authVariables }>()
           action: null,
           patientId: "",
         },
-        401
+        401,
       );
     }
 
@@ -166,11 +205,11 @@ export const patientsRoute = new Hono<{ Variables: authVariables }>()
     let muny = "";
     if (validData.nationality.countryCode === 505) {
       const department = departmentsFull.find(
-        (dep) => dep.name === validData.department
+        (dep) => dep.name === validData.department,
       );
 
       const municipality = department?.municipalities.find(
-        (municipality) => municipality.code === validData.municipality
+        (municipality) => municipality.code === validData.municipality,
       );
       muny = municipality?.name!;
     } else {
@@ -229,7 +268,7 @@ export const patientsRoute = new Hono<{ Variables: authVariables }>()
           action: null,
           patientId: "",
         },
-        401
+        401,
       );
     }
 
@@ -242,7 +281,7 @@ export const patientsRoute = new Hono<{ Variables: authVariables }>()
           action: null,
           patientId: "",
         },
-        401
+        401,
       );
     }
 
@@ -312,11 +351,11 @@ export const patientsRoute = new Hono<{ Variables: authVariables }>()
     let muny = "";
     if (validData.nationality.countryCode === 505) {
       const department = departmentsFull.find(
-        (dep) => dep.name === validData.department
+        (dep) => dep.name === validData.department,
       );
 
       const municipality = department?.municipalities.find(
-        (municipality) => municipality.code === validData.municipality
+        (municipality) => municipality.code === validData.municipality,
       );
       muny = municipality?.name!;
     } else {
@@ -405,7 +444,7 @@ export const patientsRoute = new Hono<{ Variables: authVariables }>()
     if (!patient)
       return c.json(
         { success: false, error: "No se encontro el paciente", data: null },
-        500
+        500,
       );
 
     const address = JSON.stringify(patient[0].address);
@@ -501,7 +540,7 @@ export const patientsRoute = new Hono<{ Variables: authVariables }>()
     if (!patient)
       return c.json(
         { success: false, error: "No se encontro el paciente", data: [] },
-        500
+        500,
       );
 
     return c.json({ success: true, data: data });
@@ -537,8 +576,50 @@ export const patientsRoute = new Hono<{ Variables: authVariables }>()
     if (!patient)
       return c.json(
         { success: false, error: "No se encontro el paciente", data: null },
-        500
+        500,
       );
 
     return c.json({ success: true, data: patient[0] as searchPatient });
+  })
+
+  .patch("/address/:id", zValidator("json", address), async (c) => {
+    const user = c.get("user");
+    if (!user) return c.json({ success: false, error: "unauthorized" }, 401);
+    if (user.role === "ADMIN")
+      return c.json({ success: false, error: "unauthorized" }, 401);
+
+    const id = c.req.param("id");
+
+    if (!id) return c.json({ success: false, error: "id requerido" }, 500);
+
+    const doctorId = await doctorIdentification(user.id, user.role);
+    if (!doctorId)
+      return c.json({ success: false, error: "unauthorized" }, 401);
+
+    const data = c.req.valid("json");
+
+    const [patient] = await db
+      .select({
+        address: Patients.address,
+      })
+      .from(Patients)
+      .where(and(eq(Patients.doctorId, doctorId), eq(Patients.id, id)));
+
+    if (!patient) return c.json({ success: false, error: "no found" }, 500);
+
+    const res = JSON.stringify(patient.address);
+    const oldAddress: addressType = JSON.parse(res);
+
+    const updatedAddress: addressType = {
+      nationality: oldAddress.nationality,
+      department: oldAddress.department,
+      municipality: oldAddress.municipality,
+      address: data.address,
+    };
+
+    await db
+      .update(Patients)
+      .set({ address: updatedAddress })
+      .where(eq(Patients.id, id));
+    return c.json({ success: true, error: "" });
   });

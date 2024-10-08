@@ -10,6 +10,18 @@ import errorMap from "zod/locales/en.js";
 import doctorIdentification from "../lib/identification";
 import type { drugSearch } from "../types/drugs";
 
+type PaginatedResponse = {
+  success: boolean;
+  error: string;
+  data: drugsTable[];
+  pagination: {
+    page: number;
+    pageSize: number;
+    totalCount: number;
+    totalPages: number;
+  };
+};
+
 export const drugsRoute = new Hono<{ Variables: authVariables }>()
 
   // data table
@@ -18,12 +30,12 @@ export const drugsRoute = new Hono<{ Variables: authVariables }>()
     if (!user)
       return c.json(
         { success: false, data: null, error: "User not found" },
-        401
+        401,
       );
     if (user.role !== "DOCTOR")
       return c.json(
         { success: false, data: null, error: "User not found" },
-        401
+        401,
       );
 
     const doctorId = await doctorIdentification(user.id, user.role);
@@ -31,38 +43,64 @@ export const drugsRoute = new Hono<{ Variables: authVariables }>()
     if (!doctorId)
       return c.json(
         { success: false, data: null, error: "User not found" },
-        401
+        401,
       );
 
-    const drugs = await db
-      .select({
-        id: Drugs.id,
-        tradeName: Drugs.tradeName,
-        genericName: Drugs.genericName,
-        status: Drugs.status,
-        presentations: Drugs.presentations,
-      })
-      .from(Drugs)
-      .where(and(eq(Drugs.doctorId, doctorId), eq(Drugs.status, true)));
+    const page = parseInt(c.req.query("page") || "1");
+    const pageSize = parseInt(c.req.query("pageSize") || "10");
+    const offset = (page - 1) * pageSize;
+
+    const [drugs, total] = await Promise.all([
+      db
+        .select({
+          id: Drugs.id,
+          tradeName: Drugs.tradeName,
+          genericName: Drugs.genericName,
+          status: Drugs.status,
+          presentations: Drugs.presentations,
+        })
+        .from(Drugs)
+        .where(and(eq(Drugs.doctorId, doctorId), eq(Drugs.status, true)))
+        .limit(pageSize)
+        .offset(offset),
+      db
+        .select({ count: sql<number>`cast(count(*) as integer)` })
+        .from(Drugs)
+        .where(and(eq(Drugs.doctorId, doctorId), eq(Drugs.status, true))),
+    ]);
+
+    const totalCount = total[0].count;
 
     const formattedDrugs = drugs.map((drug: any) => ({
       ...drug,
       presentations: drug.presentations || [],
     }));
 
-    return c.json({ success: true, data: formattedDrugs as drugsTable[] });
+    const response: PaginatedResponse = {
+      success: true,
+      error: "",
+      data: formattedDrugs as drugsTable[],
+      pagination: {
+        page,
+        pageSize,
+        totalCount,
+        totalPages: Math.ceil(totalCount / pageSize),
+      },
+    };
+
+    return c.json({ success: true, data: response });
   })
   .get("/search", async (c) => {
     const user = c.get("user");
     if (!user)
       return c.json(
         { success: false, data: null, error: "User not found" },
-        401
+        401,
       );
     if (user.role !== "DOCTOR")
       return c.json(
         { success: false, data: null, error: "User not found" },
-        401
+        401,
       );
 
     const doctorId = await doctorIdentification(user.id, user.role);
@@ -70,14 +108,14 @@ export const drugsRoute = new Hono<{ Variables: authVariables }>()
     if (!doctorId)
       return c.json(
         { success: false, data: null, error: "User not found" },
-        401
+        401,
       );
 
     const q = c.req.query("q");
     if (!q)
       return c.json(
         { success: false, error: "query not found", data: null },
-        500
+        500,
       );
 
     const termArray = q.trim().split(/\s+/);
@@ -89,7 +127,7 @@ export const drugsRoute = new Hono<{ Variables: authVariables }>()
     if (!term) {
       return c.json(
         { success: false, error: "query not found", data: null },
-        500
+        500,
       );
     }
 
@@ -106,9 +144,9 @@ export const drugsRoute = new Hono<{ Variables: authVariables }>()
           eq(Drugs.doctorId, doctorId),
           eq(Drugs.status, true),
           or(
-            sql`to_tsvector('english', ${Drugs.tradeName}) @@ to_tsquery('english', ${term})`
-          )
-        )
+            sql`to_tsvector('english', ${Drugs.tradeName}) @@ to_tsquery('english', ${term})`,
+          ),
+        ),
       );
 
     const x: drugSearch[] = result.map((item) => {
@@ -128,12 +166,12 @@ export const drugsRoute = new Hono<{ Variables: authVariables }>()
     if (!user)
       return c.json(
         { success: false, error: "No autorizado", result: null },
-        401
+        401,
       );
     if (user.role !== "DOCTOR")
       return c.json(
         { success: false, error: "No autorizado", result: null },
-        401
+        401,
       );
 
     const doctorId = await doctorIdentification(user.id, user.role);
@@ -150,13 +188,13 @@ export const drugsRoute = new Hono<{ Variables: authVariables }>()
         .where(
           and(
             eq(Drugs.tradeName, formatText(data.tradeName)),
-            eq(Drugs.doctorId, doctorId)
-          )
+            eq(Drugs.doctorId, doctorId),
+          ),
         );
       if (find.length > 0)
         return c.json(
           { success: false, error: "El fármaco ya existe", result: null },
-          500
+          500,
         );
 
       const result = await db
@@ -179,7 +217,7 @@ export const drugsRoute = new Hono<{ Variables: authVariables }>()
       console.log(e);
       return c.json(
         { success: false, error: "Ocurrió un error", result: null },
-        500
+        500,
       );
     }
   })
@@ -189,12 +227,12 @@ export const drugsRoute = new Hono<{ Variables: authVariables }>()
     if (!user)
       return c.json(
         { success: false, error: "No autorizado", result: null },
-        401
+        401,
       );
     if (user.role !== "DOCTOR")
       return c.json(
         { success: false, error: "No autorizado", result: null },
-        401
+        401,
       );
 
     const id = c.req.param("id");

@@ -66,7 +66,7 @@ export const doctorRoute = new Hono<{ Variables: authVariables }>()
           error: "No autenticado",
           assistantName: null,
         },
-        401
+        401,
       );
     if (user.role !== "DOCTOR")
       return c.json(
@@ -76,7 +76,7 @@ export const doctorRoute = new Hono<{ Variables: authVariables }>()
           error: "No autenticado",
           assistantName: null,
         },
-        401
+        401,
       );
 
     const info = await db.query.Doctors.findFirst({
@@ -208,6 +208,8 @@ export const doctorRoute = new Hono<{ Variables: authVariables }>()
       .innerJoin(Users, eq(Assistants.userId, Users.id))
       .where(isNull(Doctors.assistantId));
 
+    console.log(assistants);
+
     return c.json({ success: true, data: assistants }, 200);
   })
   //get diases
@@ -252,7 +254,7 @@ export const doctorRoute = new Hono<{ Variables: authVariables }>()
       if (doctor[0].hereditary && doctor[0].hereditary.includes(diseaseName)) {
         return c.json(
           { success: false, error: "Enfermedad ya registrada" },
-          400
+          400,
         );
       }
 
@@ -279,7 +281,7 @@ export const doctorRoute = new Hono<{ Variables: authVariables }>()
       if (doctor[0].infecto && doctor[0].infecto.includes(diseaseName)) {
         return c.json(
           { success: false, error: "Enfermedad ya registrada" },
-          400
+          400,
         );
       }
 

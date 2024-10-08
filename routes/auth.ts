@@ -84,20 +84,22 @@ export const authRoute = new Hono<{ Variables: authVariables }>()
   // Ruta para verificar el usuario
   .get("/verify", async (c) => {
     const user = c.get("user");
-    if (!user) return c.json({ success: false }, 401);
+    if (!user) return c.json({ success: false, data: null }, 401);
 
     //buscar como user normal
     const findUser = await db
       .select({
         id: Users.id,
         role: Users.role,
+        image: Users.image,
         name: Users.name,
         email: Users.email,
       })
       .from(Users)
       .where(eq(Users.id, user.id));
 
-    if (findUser.length <= 0) return c.json({ success: false }, 401);
+    if (findUser.length <= 0)
+      return c.json({ success: false, data: null }, 401);
 
     const userFind = findUser[0];
     //admin
@@ -106,6 +108,7 @@ export const authRoute = new Hono<{ Variables: authVariables }>()
         id: userFind.id,
         name: userFind.name,
         email: userFind.email,
+        image: userFind.image,
         role: userFind.role,
         doctor: null,
         assistant: null,
@@ -125,6 +128,7 @@ export const authRoute = new Hono<{ Variables: authVariables }>()
         name: userFind.name,
         email: userFind.email,
         role: userFind.role,
+        image: userFind.image,
         doctor: {
           id: doctor[0].id,
           specialtie: doctor[0].specialtie,
@@ -143,7 +147,8 @@ export const authRoute = new Hono<{ Variables: authVariables }>()
         .from(Assistants)
         .where(eq(Assistants.userId, userFind.id));
 
-      if (assistantInfo.length <= 0) return c.json({ success: false }, 401);
+      if (assistantInfo.length <= 0)
+        return c.json({ success: false, data: null }, 401);
 
       const doctor = await db
         .select({
@@ -152,13 +157,15 @@ export const authRoute = new Hono<{ Variables: authVariables }>()
         .from(Doctors)
         .where(eq(Doctors.assistantId, assistantInfo[0].id));
 
-      if (doctor.length <= 0) return c.json({ success: false }, 401);
+      if (doctor.length <= 0)
+        return c.json({ success: false, data: null }, 401);
 
       const data: userReturning = {
         id: userFind.id,
         name: userFind.name,
         email: userFind.email,
         role: userFind.role,
+        image: userFind.image,
         doctor: null,
         assistant: {
           id: assistantInfo[0].id,

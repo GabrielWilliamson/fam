@@ -4,6 +4,7 @@ interface User extends UserL {
   email: string;
   id: string;
   role: string;
+  image: string | null;
 }
 
 export type authVariables = {
@@ -24,5 +25,6 @@ export type userReturning = {
   email: string;
   role: string;
   doctor: doctor | null;
+  image: string | null;
   assistant: assistant | null;
 };

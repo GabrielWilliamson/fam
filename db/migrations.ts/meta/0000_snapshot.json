@@ -1,5 +1,5 @@
 {
-  "id": "296cd2ff-a4e0-4366-b223-c9b59b8502da",
+  "id": "289a8fa1-b836-4372-8b76-0fcdfea09bbe",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -83,6 +83,12 @@
           "name": "currency",
           "type": "currency",
           "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "color": {
+          "name": "color",
+          "type": "text",
           "primaryKey": false,
           "notNull": true
         },
@@ -915,7 +921,7 @@
         },
         "resources": {
           "name": "resources",
-          "type": "text[]",
+          "type": "json[]",
           "primaryKey": false,
           "notNull": false
         },

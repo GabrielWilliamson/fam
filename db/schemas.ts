@@ -135,7 +135,7 @@ export const Queries = pgTable("queries", {
   idFile: text("idFile")
     .notNull()
     .references(() => Files.id),
-  resources: text("resources").array(),
+  resources: json("resources").array(),
   interrogation: text("interrogation"),
   reason: text("reason"),
   history: text("history"),

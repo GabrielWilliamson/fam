@@ -7,7 +7,7 @@ export type tablePatients = {
   date: string;
   address: string | null;
   sex: string;
-  phone: number | null;
+  phone: string | null;
   createdAt: string;
 };
 

@@ -3,8 +3,8 @@ import type { authVariables } from "../types/auth";
 import { zValidator } from "@hono/zod-validator";
 import { RelativeSchema } from "../schemas/relativeSchema";
 import { db } from "../db/db";
-import { Files, Patients, Relatives } from "../db/schemas";
-import { eq, and, or } from "drizzle-orm";
+import { Files, Patients, Queries, Relatives } from "../db/schemas";
+import { eq, and, or, sql } from "drizzle-orm";
 import doctorIdentification from "../lib/identification";
 import { appSchema } from "../schemas/fileSchema";
 import {
@@ -22,6 +22,25 @@ import {
   tobacoSchema,
 } from "../schemas/generalSchema";
 import type { z } from "zod";
+
+type Query = {
+  createdAt: Date;
+  emergency: boolean | null;
+  reason: string | null;
+  queryId: string;
+};
+
+type PaginatedResponse = {
+  success: boolean;
+  error: string;
+  data: Query[];
+  pagination: {
+    page: number;
+    pageSize: number;
+    totalCount: number;
+    totalPages: number;
+  };
+};
 
 export const fileRoute = new Hono<{ Variables: authVariables }>()
 
@@ -49,9 +68,9 @@ export const fileRoute = new Hono<{ Variables: authVariables }>()
             eq(Relatives.patientId, data.patientId),
             or(
               eq(Relatives.dni, data.DNI),
-              eq(Relatives.phone, data.nationality.countryCode + data.phone)
-            )
-          )
+              eq(Relatives.phone, data.nationality.countryCode + data.phone),
+            ),
+          ),
         )
         .limit(1);
 
@@ -79,7 +98,6 @@ export const fileRoute = new Hono<{ Variables: authVariables }>()
       return c.json({ success: false, error: "Ocurrió un error" }, 500);
     }
   })
-
   //list relative  validar la seguridad des esto
   .get("/relative", async (c) => {
     const user = c.get("user");
@@ -154,7 +172,7 @@ export const fileRoute = new Hono<{ Variables: authVariables }>()
     if (!file)
       return c.json(
         { success: false, error: "No se encontro el expediente", data: null },
-        500
+        500,
       );
 
     if (file[0].doctorId != doctorId)
@@ -162,7 +180,7 @@ export const fileRoute = new Hono<{ Variables: authVariables }>()
 
     return c.json({ success: true, error: "", data: file[0] });
   })
-
+  //
   .patch("/infecto/:fileId", zValidator("json", infectoSchema), async (c) => {
     const user = c.get("user");
     if (!user) {
@@ -288,9 +306,8 @@ export const fileRoute = new Hono<{ Variables: authVariables }>()
         .where(eq(Files.id, fileId));
 
       return c.json({ success: true, error: "" });
-    }
+    },
   )
-
   //for pediatrics and generals
   .get("/apnp", async (c) => {
     const user = c.get("user");
@@ -335,7 +352,7 @@ export const fileRoute = new Hono<{ Variables: authVariables }>()
     if (!file)
       return c.json(
         { success: false, error: "No se encontro el expediente", data: null },
-        500
+        500,
       );
 
     if (file[0].doctorId != doctorId)
@@ -343,6 +360,7 @@ export const fileRoute = new Hono<{ Variables: authVariables }>()
 
     return c.json({ success: true, error: "", data: file[0].apnp });
   })
+  //antecendentes personales patologicos
   .get("/app", async (c) => {
     const user = c.get("user");
     if (!user) {
@@ -387,7 +405,7 @@ export const fileRoute = new Hono<{ Variables: authVariables }>()
     if (file.length === 0)
       return c.json(
         { success: false, error: "No se encontro el expediente", data: null },
-        500
+        500,
       );
 
     if (file[0].doctorId != doctorId) {
@@ -396,7 +414,6 @@ export const fileRoute = new Hono<{ Variables: authVariables }>()
 
     return c.json({ success: true, error: "", data: file[0].app });
   })
-
   // antecendentes personales no patologicos general
   .patch("/general/apnp/:fileId/:apnp", async (c) => {
     const user = c.get("user");
@@ -576,7 +593,7 @@ export const fileRoute = new Hono<{ Variables: authVariables }>()
         birthDate.getDate(),
         oldDate.getHours(),
         oldDate.getMinutes(),
-        oldDate.getSeconds()
+        oldDate.getSeconds(),
       );
 
       body.horaNacimiento = combinedDateTime;
@@ -647,7 +664,7 @@ export const fileRoute = new Hono<{ Variables: authVariables }>()
 
     const cleanData = (data: Record<string, string | undefined>) => {
       return Object.fromEntries(
-        Object.entries(data).filter(([_, value]) => value !== "")
+        Object.entries(data).filter(([_, value]) => value !== ""),
       );
     };
 
@@ -659,4 +676,59 @@ export const fileRoute = new Hono<{ Variables: authVariables }>()
       .where(eq(Files.id, fileId));
 
     return c.json({ success: true, error: "" });
+  })
+  .get("/queryList", async (c) => {
+    const user = c.get("user");
+    if (!user || user.role !== "DOCTOR") {
+      return c.json({ success: false, error: "unauthorized", data: null });
+    }
+
+    const doctorId = await doctorIdentification(user.id, user.role);
+    if (!doctorId) {
+      return c.json({ success: false, error: "unauthorized", data: null });
+    }
+
+    const fileId = c.req.query("fileId");
+    if (!fileId) {
+      return c.json({ success: false, error: "id requerido", data: null }, 500);
+    }
+
+    const page = parseInt(c.req.query("page") || "1");
+    const pageSize = parseInt(c.req.query("pageSize") || "10");
+
+    const offset = (page - 1) * pageSize;
+
+    const [data, totalCountResult] = await Promise.all([
+      db
+        .select({
+          createdAt: Queries.createdAt,
+          emergency: Queries.emergency,
+          queryId: Queries.id,
+          reason: Queries.reason,
+        })
+        .from(Queries)
+        .where(eq(Queries.idFile, fileId))
+        .limit(pageSize)
+        .offset(offset),
+      db
+        .select({ count: sql<number>`cast(count(*) as integer)` })
+        .from(Queries)
+        .where(eq(Queries.idFile, fileId)),
+    ]);
+
+    const totalCount = totalCountResult[0].count;
+
+    const response: PaginatedResponse = {
+      success: true,
+      error: "",
+      data: data,
+      pagination: {
+        page,
+        pageSize,
+        totalCount,
+        totalPages: Math.ceil(totalCount / pageSize),
+      },
+    };
+
+    return c.json(response);
   });

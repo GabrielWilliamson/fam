@@ -1,6 +1,5 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
-import { serveStatic } from "hono/bun";
 import { logger } from "hono/logger";
 import { authMiddleware } from "./auth/midleware";
 import type { authVariables } from "./types/auth";
@@ -27,6 +26,7 @@ const {
 } = route;
 
 import dotenv from "dotenv";
+import { serveStatic } from "hono/bun";
 
 dotenv.config();
 

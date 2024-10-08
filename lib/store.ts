@@ -39,26 +39,40 @@ export async function upload(
 
   return s3.send(command);
 }
-
-export async function saveIdResources(fileId: string, queryId: string) {
-  const [resources] = await db
+type resource = {
+  id: string;
+  name: string;
+};
+export async function saveIdResources(
+  fileId: string,
+  queryId: string,
+  name: string,
+) {
+  // Fetch the current resources array associated with the queryId
+  const [query] = await db
     .select({
       currentResources: Queries.resources,
     })
     .from(Queries)
     .where(eq(Queries.id, queryId));
 
-  const resourcesArray = resources.currentResources || [];
-  if (!resourcesArray.includes(fileId)) {
+  const resourcesArray: resource[] =
+    (query.currentResources as resource[]) || [];
+
+  // Check if the resource already exists
+  if (!resourcesArray.some((resource) => resource.id === fileId)) {
+    const newResource = { id: fileId, name };
+
+    // Append the new resource and update the table
     await db
       .update(Queries)
-      .set({ resources: [...resourcesArray, fileId] })
+      .set({ resources: [...resourcesArray, newResource] })
       .where(eq(Queries.id, queryId));
   }
 }
 
 export async function getResources(
-  list: string[],
+  list: resource[],
 ): Promise<{ id: string; url: string }[]> {
   const s3 = new S3Client({
     region: region,
@@ -68,8 +82,8 @@ export async function getResources(
     },
   });
 
-  const resourcePromises = list.map(async (idResource: string) => {
-    const fileId = idResource.split(".").shift() || "";
+  const resourcePromises = list.map(async (res: resource) => {
+    const fileId = res.id.split(".").shift() || "";
 
     const command = new GetObjectCommand({
       Bucket: bucketName,
@@ -78,7 +92,7 @@ export async function getResources(
 
     const url = await getSignedUrl(s3, command, { expiresIn: 3600 });
 
-    return { id: idResource, url };
+    return { id: res.id, url, name: res.name };
   });
 
   // Wait for all the promises to resolve
