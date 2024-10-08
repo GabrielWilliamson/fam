@@ -167,7 +167,7 @@ function restoreDatabase(): Promise<void> {
 function backupDatabase(): Promise<void> {
   return new Promise((resolve, reject) => {
     exec(
-      `pg_dump -U postgres -h localhost -F c -b -v -f ./backup/backup.dump ${DB_NAME}`,
+      `pg_dump -U ${DB_USER} -h localhost -F c -b -v -f ./backup/backup.dump ${DB_NAME}`,
       (error, stdout, stderr) => {
         if (error) {
           console.error(`Error al hacer el respaldo: ${error.message}`);

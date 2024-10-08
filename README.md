@@ -15,6 +15,11 @@ pg_dump -U postgres -h localhost -F c -b -v -f backup.dump famed
 
 sudo systemctl status famed.service
 
+
+detener
+sudo systemctl stop famed.service
+
+
 # database restore
 
 pg_restore -U postgres -d famed --clean --no-owner /home/gabriel/Desktop/backup.dump
