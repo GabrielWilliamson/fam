@@ -34,9 +34,6 @@ const app = new Hono<{ Variables: authVariables }>();
 
 app.use("*", authMiddleware);
 
-app.get("*", serveStatic({ root: "./static" }));
-app.get("*", serveStatic({ path: "./static/index.html" }));
-
 app.use("/api/*", logger());
 
 const routes = app
@@ -58,6 +55,9 @@ const routes = app
   .route("/charts", chartsRoute)
   .route("/flows", flowsRoute)
   .route("/data", dataRoute);
+
+app.get("*", serveStatic({ root: "./static" }));
+app.get("*", serveStatic({ path: "./static/index.html" }));
 
 export default app;
 export type typeRoutes = typeof routes;
