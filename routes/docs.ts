@@ -18,6 +18,7 @@ import doctorIdentification from "../lib/identification";
 import { makeQuerieDoc } from "../lib/docs/querie";
 import { makePrescriptionDoc } from "../lib/docs/prescription";
 import { makePatientListDoc } from "../lib/docs/patients";
+import { makePrescriptionListDoc } from "../lib/docs/prescriptionList";
 
 export const docsRoute = new Hono<{ Variables: authVariables }>()
 
@@ -334,6 +335,53 @@ export const docsRoute = new Hono<{ Variables: authVariables }>()
           (chunk) => controller.enqueue(chunk),
           () => controller.close(),
           querieId,
+        );
+      },
+    });
+
+    // Configurar las cabeceras para enviar un archivo PDF
+    c.header("Content-Type", "application/pdf");
+    c.header("Content-Disposition", "attachment; filename=patient_report.pdf");
+
+    // Enviar el stream del archivo PDF
+    return c.body(readableStream);
+  })
+  //all prescriptions
+  .get("/prescriptions", async (c) => {
+    const user = c.get("user");
+    if (!user || user.role !== "DOCTOR") return c.json({ success: false }, 401);
+
+    const patientId = c.req.query("patientId");
+    if (!patientId) return c.json({ success: false, data: null }, 500);
+
+    const doctorId = await doctorIdentification(user.id, user.role);
+    if (!doctorId) return c.json({ success: false, data: null }, 401);
+
+    const [patient] = await db
+      .select()
+      .from(Patients)
+      .where(eq(Patients.doctorId, doctorId));
+
+    if (!patient) return c.json({ success: false, data: null }, 404);
+
+    const results = await db
+      .select({
+        id: Prescriptions.id,
+      })
+      .from(Queries)
+      .innerJoin(Files, eq(Files.id, Queries.idFile))
+      .innerJoin(Prescriptions, eq(Prescriptions.querieId, Queries.id))
+      .where(eq(Files.patientId, patientId));
+
+    if (results.length > 1) {
+      return c.json({ success: false, data: null }, 200);
+    }
+    const readableStream = new ReadableStream({
+      start(controller) {
+        makePrescriptionListDoc(
+          (chunk) => controller.enqueue(chunk),
+          () => controller.close(),
+          patientId,
         );
       },
     });

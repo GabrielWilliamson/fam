@@ -24,11 +24,9 @@ async function loadData(querieId: string) {
     })
     .from(Prescriptions)
     .innerJoin(Queries, eq(Prescriptions.querieId, Queries.id))
-    .innerJoin(Files, eq(Queries.idFile, Files.id))
-    .innerJoin(Patients, eq(Files.patientId, Patients.id))
-    .innerJoin(Doctors, eq(Queries.doctorId, Doctors.id))
-    .innerJoin(Users, eq(Doctors.userId, Users.id))
     .where(eq(Prescriptions.querieId, querieId));
+
+  if (prescription.length < 1) return { prescriptionDetails: [] };
 
   const prescriptionDetails = await db
     .select({
@@ -317,29 +315,33 @@ async function addPrescription(
   title(doc, yPosition, "Prescripción");
   yPosition += 10;
 
-  autoTable(doc, {
-    startY: yPosition,
-    head: [["Medicamento", "Nombre Genérico", "Presentación", "Indicaciones"]],
-    body: prescriptionDetails.map((detail) => [
-      detail.tradeName,
-      detail.genericName,
-      detail.presentation,
-      detail.indications,
-    ]),
-    theme: "grid",
-    headStyles: {
-      fillColor: [200, 200, 200],
-      textColor: [0, 0, 0],
-      fontStyle: "bold",
-    },
-    styles: { fontSize: 10 },
-    columnStyles: {
-      0: { cellWidth: 40 },
-      1: { cellWidth: 40 },
-      2: { cellWidth: 40 },
-      3: { cellWidth: "auto" },
-    },
-  });
+  if (prescriptionDetails.length > 0) {
+    autoTable(doc, {
+      startY: yPosition,
+      head: [
+        ["Medicamento", "Nombre Genérico", "Presentación", "Indicaciones"],
+      ],
+      body: prescriptionDetails.map((detail) => [
+        detail.tradeName,
+        detail.genericName,
+        detail.presentation,
+        detail.indications,
+      ]),
+      theme: "grid",
+      headStyles: {
+        fillColor: [200, 200, 200],
+        textColor: [0, 0, 0],
+        fontStyle: "bold",
+      },
+      styles: { fontSize: 10 },
+      columnStyles: {
+        0: { cellWidth: 40 },
+        1: { cellWidth: 40 },
+        2: { cellWidth: 40 },
+        3: { cellWidth: "auto" },
+      },
+    });
+  }
 
   return (doc as any).lastAutoTable.finalY + 10;
 }
