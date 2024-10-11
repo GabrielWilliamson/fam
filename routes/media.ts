@@ -264,6 +264,7 @@ export const mediaRoute = new Hono<{ Variables: authVariables }>()
     try {
       await upload(arrayBuffer, fileName, file.type);
     } catch (e) {
+      console.error("error shampu", e);
       return c.json({ error: "No se pudo subir el archivo" }, 500);
     }
 
