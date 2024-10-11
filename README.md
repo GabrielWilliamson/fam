@@ -82,3 +82,7 @@ sudo chown ubuntu:ubuntu /etc/famed.env
 
     # ver logs detallados
       sudo journalctl -xeu famed.service
+
+
+    # realtime logs
+    sudo journalctl -u famed.service -f
