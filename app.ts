@@ -19,7 +19,7 @@ const {
   mediaRoute,
   servicesRoute,
   helpsRoute,
-  docsRoute,
+  pdfRoute,
   dataRoute,
   chartsRoute,
   flowsRoute,
@@ -51,7 +51,7 @@ const routes = app
   .route("/prescriptions", prescriptionsRoute)
   .route("/media", mediaRoute)
   .route("/services", servicesRoute)
-  .route("/docs", docsRoute)
+  .route("/pdf", pdfRoute)
   .route("/charts", chartsRoute)
   .route("/flows", flowsRoute)
   .route("/data", dataRoute);

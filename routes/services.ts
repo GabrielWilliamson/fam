@@ -75,19 +75,16 @@ export const servicesRoute = new Hono<{ Variables: authVariables }>()
       return c.json({ success: false, data: null }, 401);
     }
 
-    // Verificar identificación del doctor
     const doctorId = await doctorIdentification(user.id, user.role);
     if (!doctorId) {
       return c.json({ success: false, data: null }, 401);
     }
 
-    // Identificación del asistente (puede ser null si no hay asistente)
     const assistantId = await assistantIdentification(user.role, user.id);
 
-    // Obtener datos del doctor y el asistente (si existe)
     const data = await db
       .select({
-        totalA: assistantId ? Assistants.total : sql<number | null>`NULL`, // Asignar NULL si no hay asistente
+        totalA: assistantId ? Assistants.total : sql<number | null>`NULL`,
         cordobasA: assistantId ? Assistants.cordobas : sql<number | null>`NULL`,
         dollarsA: assistantId ? Assistants.dollars : sql<number | null>`NULL`,
         total: Doctors.total,
@@ -99,7 +96,6 @@ export const servicesRoute = new Hono<{ Variables: authVariables }>()
       .leftJoin(Assistants, eq(Doctors.assistantId, Assistants.id))
       .where(eq(Doctors.id, doctorId));
 
-    // Consulta para obtener los gastos del doctor (userId del doctor)
     const doctorExpensesQuery = await db
       .select({
         doctorExpenses: sql<number>`SUM(${Flows.total})`,
@@ -143,7 +139,7 @@ export const servicesRoute = new Hono<{ Variables: authVariables }>()
     const doctorExpenses = doctorExpensesQuery[0]?.doctorExpenses ?? 0;
     const assistantExpenses =
       assistantExpensesQuery[0]?.assistantExpenses ?? null;
-    const expencesTotal = doctorExpenses + assistantExpenses ?? 0;
+    const expencesTotal = doctorExpenses + assistantExpenses || 0;
 
     return c.json({
       success: true,
@@ -280,16 +276,19 @@ export const servicesRoute = new Hono<{ Variables: authVariables }>()
       });
     }
 
-    const setTotalCordobas = maxCordobas - result.data.cordobas ?? 0;
-    const setTotalDolares = maxDolares - result.data.dolares ?? 0;
+    const setTotalCordobas = maxCordobas - result.data.cordobas || 0;
+    const setTotalDolares = maxDolares - result.data.dolares || 0;
+
     const total = setTotalCordobas + setTotalDolares * currentRate;
+    const grandTotal =
+      result.data.cordobas || 0 + result.data.dolares || 0 * currentRate;
 
     await db.insert(Flows).values({
       flow: "conciliation",
       description: "conciliation",
       doctorId: doctorId,
       chargeTo: user.id,
-      total: total,
+      total: grandTotal,
       cordobas: result.data.cordobas ?? 0,
       dollars: result.data.dolares ?? 0,
     });

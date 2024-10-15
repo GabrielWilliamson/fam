@@ -5,8 +5,9 @@ import {
   diasesSchema,
   addAssitantSchema,
   credentialSchema,
-  skillsSchema,
-  specialiteSchema,
+  socialsSchema,
+  specialitySchema,
+  fileTypeSchema,
 } from "../schemas/doctorSchema";
 import { Assistants, Doctors, Users } from "../db/schemas";
 import { db } from "../db/db";
@@ -14,6 +15,27 @@ import { eq, isNull, sql } from "drizzle-orm";
 
 export const doctorRoute = new Hono<{ Variables: authVariables }>()
 
+  //especiality
+  .patch("/speciality", zValidator("json", specialitySchema), async (c) => {
+    const user = c.get("user");
+    if (!user) return c.json({ success: false }, 401);
+    if (user.role !== "DOCTOR") return c.json({ success: false }, 401);
+
+    const data = c.req.valid("json");
+
+    try {
+      await db
+        .update(Doctors)
+        .set({
+          specialityName: data.speciality,
+        })
+        .where(eq(Doctors.userId, user.id));
+      return c.json({ success: true });
+    } catch (e) {
+      console.log(e);
+      return c.json({ success: false, error: "Ocurrió un error" }, 500);
+    }
+  })
   //save credential
   .patch("/credential", zValidator("json", credentialSchema), async (c) => {
     const user = c.get("user");
@@ -36,7 +58,7 @@ export const doctorRoute = new Hono<{ Variables: authVariables }>()
     }
   })
   //save file type
-  .patch("/type", zValidator("json", specialiteSchema), async (c) => {
+  .patch("/type", zValidator("json", fileTypeSchema), async (c) => {
     const user = c.get("user");
     if (!user) return c.json({ success: false }, 401);
     if (user.role !== "DOCTOR") return c.json({ success: false }, 401);
@@ -57,24 +79,12 @@ export const doctorRoute = new Hono<{ Variables: authVariables }>()
   //get doctor info
   .get("/info", async (c) => {
     const user = c.get("user");
-
-    if (!user)
-      return c.json(
-        {
-          credential: null,
-          skils: null,
-          error: "No autenticado",
-          assistantName: null,
-        },
-        401,
-      );
+    if (!user) return c.json({ success: false, data: null }, 401);
     if (user.role !== "DOCTOR")
       return c.json(
         {
-          credential: null,
-          skils: null,
-          error: "No autenticado",
-          assistantName: null,
+          success: false,
+          data: null,
         },
         401,
       );
@@ -84,6 +94,8 @@ export const doctorRoute = new Hono<{ Variables: authVariables }>()
       columns: {
         credential: true,
         socials: true,
+        specialtie: true,
+        specialityName: true,
       },
     });
 
@@ -97,67 +109,72 @@ export const doctorRoute = new Hono<{ Variables: authVariables }>()
       .where(eq(Doctors.userId, user.id));
 
     return c.json({
-      credential: info?.credential || null,
-      skils: info?.socials || null,
-      assistantName: assistant[0]?.assistantName || null,
+      success: true,
+      data: {
+        credential: info?.credential || null,
+        socials: info?.socials || null,
+        fileType: info?.specialtie,
+        speciality: info?.specialityName || null,
+        assistantName: assistant[0]?.assistantName || null,
+      },
     });
   })
-  //save skils
-  // .get("/skils", zValidator("json", skillsSchema), async (c) => {
-  //   const user = c.get("user");
-  //   if (!user) return c.body(null, 401);
-  //   if (user.role !== "DOCTOR") return c.body(null, 401);
+  /*add socials media */
+  .post("/socials", zValidator("json", socialsSchema), async (c) => {
+    const user = c.get("user");
+    if (!user) return c.body(null, 401);
+    if (user.role !== "DOCTOR") return c.body(null, 401);
 
-  //   const data = c.req.valid("json");
-  //   try {
-  //     const ob = JSON.parse(data.skills);
-  //     await db
-  //       .update(Doctors)
-  //       .set({
-  //         socials: ob,
-  //       })
-  //       .where(eq(Doctors.userId, user.id));
-  //     return c.json({ success: true });
-  //   } catch (e) {
-  //     console.log(e);
-  //     return c.json({ success: false, error: "Ocurrió un error" }, 500);
-  //   }
-  // })
-  //delete skills //CAMBIAR A REDES SOCIALES
-  // .delete("/skils/:skill", async (c) => {
-  //   const user = c.get("user");
-  //   if (!user) return c.body(null, 401);
-  //   if (user.role !== "DOCTOR") return c.body(null, 401);
+    const data = c.req.valid("json");
+    try {
+      const ob = JSON.parse(data.skills);
+      await db
+        .update(Doctors)
+        .set({
+          socials: ob,
+        })
+        .where(eq(Doctors.userId, user.id));
+      return c.json({ success: true });
+    } catch (e) {
+      console.log(e);
+      return c.json({ success: false, error: "Ocurrió un error" }, 500);
+    }
+  })
+  /*delete socials media */
+  .delete("/socials/:social", async (c) => {
+    const user = c.get("user");
+    if (!user) return c.body(null, 401);
+    if (user.role !== "DOCTOR") return c.body(null, 401);
 
-  //   const skill = c.req.param("skill");
+    const social = c.req.param("social");
 
-  //   if (!skill) return c.json({ success: false }, 500);
+    if (!social) return c.json({ success: false }, 500);
 
-  //   try {
-  //     const doc = await db.query.Doctors.findFirst({
-  //       where: eq(Doctors.userId, user.id),
-  //       columns: {
-  //         skils: true,
-  //       },
-  //     });
+    try {
+      const doc = await db.query.Doctors.findFirst({
+        where: eq(Doctors.userId, user.id),
+        columns: {
+          socials: true,
+        },
+      });
 
-  //     const res = JSON.stringify(doc!.skils);
-  //     let w: { [key: string]: string } = JSON.parse(res);
-  //     delete w[skill];
+      const res = JSON.stringify(doc!.socials);
+      let w: { [key: string]: string } = JSON.parse(res);
+      delete w[social];
 
-  //     await db
-  //       .update(Doctors)
-  //       .set({
-  //         skils: w,
-  //       })
-  //       .where(eq(Doctors.userId, user.id));
+      await db
+        .update(Doctors)
+        .set({
+          socials: w,
+        })
+        .where(eq(Doctors.userId, user.id));
 
-  //     return c.json({ success: true });
-  //   } catch (error) {
-  //     console.error("Error al eliminar la habilidad:");
-  //     return c.json({ success: false });
-  //   }
-  // })
+      return c.json({ success: true });
+    } catch (error) {
+      console.error("Error al eliminar la habilidad:");
+      return c.json({ success: false });
+    }
+  })
   //save my assistant
   .patch("/assistant", zValidator("json", addAssitantSchema), async (c) => {
     const user = c.get("user");

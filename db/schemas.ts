@@ -52,6 +52,7 @@ export const Doctors = pgTable("doctors", {
   rate: doublePrecision("rate").notNull().default(0),
   specialtie: Specialties("specialtie").default("GENERAL").notNull(),
   infecto: text("infecto").array(),
+  specialityName: text("specialityName").default("Médico General").notNull(),
   hereditary: text("hereditary").array(),
   total: doublePrecision("total").notNull().default(0),
   dollars: integer("dolars").notNull().default(0),

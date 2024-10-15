@@ -11,7 +11,7 @@ import { prescriptionsRoute } from "./prescriptions";
 import { mediaRoute } from "./media";
 import { servicesRoute } from "./services";
 import { helpsRoute } from "./helps";
-import { docsRoute } from "./docs";
+import { pdfRoute } from "./pdf";
 import { dataRoute } from "./data";
 import { chartsRoute } from "./charts";
 import { flowsRoute } from "./flows";
@@ -30,7 +30,7 @@ export const route = {
   prescriptionsRoute,
   servicesRoute,
   helpsRoute,
-  docsRoute,
+  pdfRoute,
   dataRoute,
   chartsRoute,
   flowsRoute,

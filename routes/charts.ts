@@ -1,10 +1,9 @@
 import { Hono } from "hono";
-import { zValidator } from "@hono/zod-validator";
 import type { authVariables } from "../types/auth";
 import { db } from "../db/db";
-import { Flows, Queries, UserRoles } from "../db/schemas";
+import { Flows, Queries } from "../db/schemas";
 import doctorIdentification from "../lib/identification";
-import { eq, and, sql, lte, gte, desc, sum } from "drizzle-orm";
+import { eq, and, sql, lte, gte, asc, sum, desc } from "drizzle-orm";
 
 export const chartsRoute = new Hono<{ Variables: authVariables }>()
 
@@ -82,7 +81,6 @@ export const chartsRoute = new Hono<{ Variables: authVariables }>()
     const fromDat = c.req.query("from");
     const toDat = c.req.query("to");
 
-    // Validar que ambos parámetros están presentes
     if (!fromDat || !toDat) {
       return c.json({ success: false, data: [], error: "error" }, 400);
     }
@@ -90,30 +88,26 @@ export const chartsRoute = new Hono<{ Variables: authVariables }>()
     const fromDate = new Date(fromDat);
     const toDate = new Date(toDat);
 
-    console.log(fromDate, toDate);
-
-    // Asegurar que los tiempos están correctamente establecidos
     fromDate.setHours(0, 0, 0, 0);
     toDate.setHours(23, 59, 59, 0);
 
     const data = await db
       .select({
-        date: sql<string>`to_char(${Queries.createdAt}, 'DD-MM-YYYY')`,
-        totalSum: sum(Queries.price),
+        date: sql<string>`to_char(${Flows.createdAt}, 'DD-MM-YYYY')`,
+        totalSum: sum(Flows.total),
       })
-      .from(Queries)
+      .from(Flows)
       .where(
         and(
-          eq(Queries.doctorId, doctorId),
-          gte(sql`DATE(${Queries.createdAt})`, sql`DATE(${fromDate})`),
-          lte(Queries.createdAt, sql`${toDate}::timestamp + interval '1 day'`),
+          eq(Flows.doctorId, doctorId),
+          eq(Flows.flow, "income"),
+          gte(sql`DATE(${Flows.createdAt})`, sql`DATE(${fromDate})`),
+          lte(Flows.createdAt, sql`${toDate}::timestamp + interval '1 day'`),
         ),
       )
-      .groupBy(sql`to_char(${Queries.createdAt}, 'DD-MM-YYYY')`)
-      .orderBy(desc(sql`to_char(${Queries.createdAt}, 'DD-MM-YYYY')`))
+      .groupBy(sql`to_char(${Flows.createdAt}, 'DD-MM-YYYY')`)
+      .orderBy(asc(sql`to_char(${Flows.createdAt}, 'DD-MM-YYYY')`))
       .execute();
-
-    console.log(data);
 
     return c.json({ success: true, data: data, error: "" });
   })

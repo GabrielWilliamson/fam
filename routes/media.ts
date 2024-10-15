@@ -22,11 +22,17 @@ export const mediaRoute = new Hono<{ Variables: authVariables }>()
   //guardar los recursos de la consuta
   .post("/resources/:queryId", async (c) => {
     const user = c.get("user");
-    if (!user) return c.json({ error: "No se encontro el usuario" }, 401);
-    if (user.role !== "DOCTOR") return c.json({ error: "No autorizado" }, 401);
+    if (!user)
+      return c.json(
+        { success: false, error: "No se encontro el usuario" },
+        401,
+      );
+    if (user.role !== "DOCTOR")
+      return c.json({ success: false, error: "No autorizado" }, 401);
 
     const doctorId = await doctorIdentification(user.id, user.role);
-    if (!doctorId) return c.json({ success: false, data: [] }, 401);
+    if (!doctorId)
+      return c.json({ success: false, error: "unauthorized" }, 401);
 
     const queryId = c.req.param("queryId");
     if (!queryId) return c.json({ error: "No se encontro el query" }, 400);
@@ -34,6 +40,23 @@ export const mediaRoute = new Hono<{ Variables: authVariables }>()
     //validar que esa querie exista y que tenga acceso a ella
     const body = await c.req.parseBody();
     const files: Blob[] = [];
+
+    // validar la cantidad de archivos
+
+    const MAX_FILES = 6;
+
+    const resources = await db
+      .select({
+        currentResources: Queries.resources,
+      })
+      .from(Queries)
+      .where(eq(Queries.id, queryId));
+
+    let existingResourcesCount = 0;
+
+    if (resources.length > 0 && resources[0].currentResources) {
+      existingResourcesCount = resources[0].currentResources.length;
+    }
 
     // Recorrer las entradas del objeto
     Object.entries(body).forEach(([key, value]) => {
@@ -43,7 +66,19 @@ export const mediaRoute = new Hono<{ Variables: authVariables }>()
     });
 
     if (!files.length) {
-      return c.json({ error: "No se subieron archivos" }, 400);
+      return c.json({ success: false, error: "No se subieron archivos" }, 400);
+    }
+
+    const totalFilesCount = existingResourcesCount + files.length;
+
+    if (totalFilesCount > MAX_FILES) {
+      return c.json(
+        {
+          success: false,
+          error: `Se permite un máximo de ${MAX_FILES} archivos. Actualmente tienes ${totalFilesCount} archivos.`,
+        },
+        400,
+      );
     }
 
     //veryfying file types
@@ -72,7 +107,10 @@ export const mediaRoute = new Hono<{ Variables: authVariables }>()
     });
 
     if (!ready) {
-      return c.json({ error: "Tipo de archivo no admitido" }, 400);
+      return c.json(
+        { success: false, error: "Tipo de archivo no admitido" },
+        400,
+      );
     }
 
     const maxSize = 3 * 1024 * 1024; // 3MB en bytes
@@ -82,7 +120,10 @@ export const mediaRoute = new Hono<{ Variables: authVariables }>()
     });
 
     if (!allFilesWithinLimit) {
-      return c.json({ error: "Los archivos exceden el tamaño maximo" }, 400);
+      return c.json(
+        { success: false, error: "Los archivos exceden el tamaño maximo" },
+        400,
+      );
     }
 
     try {
@@ -93,10 +134,13 @@ export const mediaRoute = new Hono<{ Variables: authVariables }>()
         saveIdResources(fileName + "." + file.type, queryId, file.name);
       }
 
-      return c.json({ success: true, files: [] });
+      return c.json({ success: true, error: "" });
     } catch (error) {
       console.error("Error al subir los archivos:", error);
-      return c.json({ error: "Falló la subida de los archivos" }, 500);
+      return c.json(
+        { success: false, error: "Falló la subida de los archivos" },
+        500,
+      );
     }
   })
   //borrar un recurso de la consulta

@@ -1,0 +1,1 @@
+ALTER TABLE "doctors" ADD COLUMN "specialityName" text DEFAULT 'Médico General' NOT NULL;

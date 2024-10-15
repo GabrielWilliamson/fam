@@ -130,7 +130,112 @@ export const queriesRoute = new Hono<{ Variables: authVariables }>()
   })
 
   //Create query emergency
+  .post("/emergency/:patientId", async (c) => {
+    const user = c.get("user");
+    if (!user)
+      return c.json(
+        { success: false, redirect: null, error: "No autorizado" },
+        401,
+      );
+    if (user.role !== "DOCTOR")
+      return c.json(
+        { success: false, redirect: null, error: "No autorizado" },
+        401,
+      );
 
+    const doctorId = await doctorIdentification(user.id, user.role);
+
+    if (!doctorId)
+      return c.json(
+        { success: false, redirect: null, error: "No autorizado" },
+        401,
+      );
+
+    const patientId = c.req.param("patientId");
+    if (!patientId) {
+      return c.json(
+        {
+          success: false,
+          redirect: null,
+          error: "El id es requerido",
+        },
+        500,
+      );
+    }
+
+    // buscar si el paciente existe
+    // validar que sea del doctor
+
+    const [patient] = await db
+      .select({
+        fileId: Files.id,
+      })
+      .from(Patients)
+      .innerJoin(Files, eq(Patients.id, Files.patientId))
+      .where(and(eq(Patients.id, patientId), eq(Patients.doctorId, doctorId)))
+      .limit(1);
+
+    if (!patient) {
+      return c.json(
+        {
+          success: false,
+          redirect: null,
+          error: "No encontrado",
+        },
+        404,
+      );
+    }
+
+    // validar que si tiene una cita existente no puede crear una consulta de emergencia
+    const findQuerie = await db
+      .select({ id: Queries.id })
+      .from(Queries)
+      .where(
+        and(
+          eq(Queries.idFile, patient.fileId),
+          eq(Queries.doctorId, doctorId),
+          eq(Queries.status, "process"),
+        ),
+      );
+
+    if (findQuerie.length > 0) {
+      return c.json(
+        { success: true, redirect: findQuerie[0].id, error: null, role: null },
+        500,
+      );
+    }
+
+    const result = await db
+      .insert(Queries)
+      .values({
+        dateId: dateInfo[0].dateId!,
+        idFile: dateInfo[0].idFile!,
+        doctorId: dateInfo[0].doctorId!,
+        status: "process",
+      })
+      .returning({
+        querieId: Queries.id,
+      });
+
+    await db.insert(Exams).values({
+      querieId: result[0].querieId,
+    });
+
+    await db
+      .update(Dates)
+      .set({ status: "process" })
+      .where(eq(Dates.id, dateId));
+
+    return c.json(
+      {
+        success: true,
+        redirect: result[0].querieId,
+        error: null,
+        role: user.role,
+      },
+      200,
+    );
+  })
   //get current query
   .get("/data", async (c) => {
     const user = c.get("user");
