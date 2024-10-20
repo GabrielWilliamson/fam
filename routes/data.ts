@@ -171,12 +171,13 @@ function backupDatabase(): Promise<void> {
       (error, stdout, stderr) => {
         if (error) {
           console.error(`Error al hacer el respaldo: ${error.message}`);
+          console.error(`Detalles del error: ${error}`);
           return reject(error);
         }
         if (stderr) {
-          console.log(`stderr ===> ${stderr}`);
+          console.warn(`Advertencia de pg_dump:\n${stderr}`);
         }
-        console.log(`Output:\n${stdout}`);
+        console.log(`Resultado de pg_dump:\n${stdout}`);
         resolve(); // Resolvemos la promesa al completar la operación
       },
     );

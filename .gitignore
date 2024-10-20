@@ -58,8 +58,7 @@ build/Release
 
 node_modules/
 jspm_packages/
-pictures/
-backup/
+
 
 
 # Snowpack dependency directory (https://snowpack.dev/)

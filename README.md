@@ -7,6 +7,8 @@
  \dt
 
 
+ # ver el contenido del .env
+   cat /etc/famed.env
 
 # database backup
 
