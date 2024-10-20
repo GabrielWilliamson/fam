@@ -181,7 +181,7 @@ async function backupDatabase(): Promise<void> {
       DB_NAME!,
     ],
     {
-      env: { ...process.env, PGPASSWORD: PASS },
+      env: { PGPASSWORD: PASS },
       stdout: "pipe",
       stderr: "pipe",
     },
