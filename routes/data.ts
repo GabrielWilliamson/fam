@@ -11,7 +11,7 @@ import { db } from "../db/db";
 import { z } from "zod";
 import { zValidator } from "@hono/zod-validator";
 
-const { DB_USER, DB_NAME, PASS } = process.env;
+const { DB_USER, DB_NAME, PASS, SMTP_EMAIL, SMTP_GMAIL_PASS } = process.env;
 
 const fileSchema = z.object({
   file: z
@@ -186,7 +186,7 @@ async function backupDatabase(): Promise<void> {
       console.warn(`Advertencia de pg_dump:\n${stderr}`);
     }
 
-    console.log(`Resultado de pg_dump:\n${stdout}`);
+    console.log(`Generado correctamente`);
   } catch (error) {
     console.error(`Error al hacer el respaldo:`, error);
     throw error;
@@ -195,6 +195,7 @@ async function backupDatabase(): Promise<void> {
 
 function compressBackup(): Promise<void> {
   return new Promise((resolve, reject) => {
+    console.log("Comprimiendo respaldo...");
     exec("gzip ./backup/backup.dump", (error, stdout, stderr) => {
       if (error) {
         console.error(`Error al comprimir el respaldo: ${error.message}`);
@@ -211,7 +212,7 @@ function compressBackup(): Promise<void> {
 
 async function sendBackupEmail(email: string): Promise<void> {
   try {
-    const { SMTP_EMAIL, SMTP_GMAIL_PASS } = process.env;
+    console.log("Enviando correo...");
     const transporter = nodemailer.createTransport({
       service: "gmail",
       auth: {
