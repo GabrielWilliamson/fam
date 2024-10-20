@@ -167,8 +167,6 @@ function restoreDatabase(): Promise<void> {
 async function backupDatabase(): Promise<void> {
   const proc = Bun.spawn(
     [
-      "PGPASSWORD",
-      PASS!,
       "pg_dump",
       "-U",
       DB_USER!,
@@ -189,22 +187,25 @@ async function backupDatabase(): Promise<void> {
     },
   );
 
-  const stdout = await new Response(proc.stdout).text();
-  const stderr = await new Response(proc.stderr).text();
+  const stdout = new Response(proc.stdout).text();
+  const stderr = new Response(proc.stderr).text();
 
   try {
     const exitCode = await proc.exited;
+    const stderrText = await stderr;
+    const stdoutText = await stdout;
+
     if (exitCode !== 0) {
       console.error(`Error al hacer el respaldo: Exit code ${exitCode}`);
-      console.error(`Detalles del error: ${stderr}`);
+      console.error(`Detalles del error: ${stderrText}`);
       throw new Error(`pg_dump failed with exit code ${exitCode}`);
     }
-    if (stderr) {
-      console.warn(`Advertencia de pg_dump:\n${stderr}`);
+    if (stderrText) {
+      console.warn(`Advertencia de pg_dump:\n${stderrText}`);
     }
-    console.log(`Resultado de pg_dump:\n${stdout}`);
+    console.log(`Resultado de pg_dump:\n${stdoutText}`);
   } catch (error) {
-    console.error(`Error al hacer el respaldo: ${error}`);
+    console.error(`Error al hacer el respaldo:`, error);
     throw error;
   }
 }
