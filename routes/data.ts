@@ -164,51 +164,39 @@ function restoreDatabase(): Promise<void> {
   });
 }
 
+import { Client } from "pg";
+import { exec } from "child_process";
+import { promisify } from "util";
+
+const execAsync = promisify(exec);
+
 async function backupDatabase(): Promise<void> {
   const connectionString = `postgresql://${DB_USER}:${PASS}@localhost/${DB_NAME}`;
 
   console.log(connectionString);
 
-  const proc = Bun.spawn(
-    [
-      "pg_dump",
-      "-d",
-      connectionString,
-      "-F",
-      "c",
-      "-b",
-      "-v",
-      "-f",
-      "./backup/backup.dump",
-    ],
-    {
-      stdout: "pipe",
-      stderr: "pipe",
-    },
-  );
+  const dumpFile = "./backup/backup.dump";
 
-  const stdout = new Response(proc.stdout).text();
-  const stderr = new Response(proc.stderr).text();
+  // Construir el comando de pg_dump
+  const command = `pg_dump -d "${connectionString}" -F c -b -v -f "${dumpFile}"`;
 
   try {
-    const exitCode = await proc.exited;
-    const stderrText = await stderr;
-    const stdoutText = await stdout;
+    // Ejecutar el comando de pg_dump
+    const { stdout, stderr } = await execAsync(command);
 
-    if (exitCode !== 0) {
-      console.error(`Error al hacer el respaldo: Exit code ${exitCode}`);
-      console.error(`Detalles del error: ${stderrText}`);
-      throw new Error(`pg_dump failed with exit code ${exitCode}`);
+    if (stderr) {
+      console.warn(`Advertencia de pg_dump:\n${stderr}`);
     }
-    if (stderrText) {
-      console.warn(`Advertencia de pg_dump:\n${stderrText}`);
-    }
-    console.log(`Resultado de pg_dump:\n${stdoutText}`);
+
+    console.log(`Resultado de pg_dump:\n${stdout}`);
   } catch (error) {
     console.error(`Error al hacer el respaldo:`, error);
     throw error;
   }
 }
+
+// Llamar a la función
+backupDatabase();
 
 function compressBackup(): Promise<void> {
   return new Promise((resolve, reject) => {
