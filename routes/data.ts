@@ -167,6 +167,8 @@ function restoreDatabase(): Promise<void> {
 async function backupDatabase(): Promise<void> {
   const proc = Bun.spawn(
     [
+      "PGPASSWORD",
+      PASS!,
       "pg_dump",
       "-U",
       DB_USER!,
