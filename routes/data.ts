@@ -204,7 +204,7 @@ async function backupDatabase(): Promise<void> {
     }
     console.log(`Resultado de pg_dump:\n${stdout}`);
   } catch (error) {
-    console.error(`Error al hacer el respaldo: ${error.message}`);
+    console.error(`Error al hacer el respaldo: ${error}`);
     throw error;
   }
 }
