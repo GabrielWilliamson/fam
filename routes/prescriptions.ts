@@ -13,8 +13,7 @@ import { zValidator } from "@hono/zod-validator";
 import doctorIdentification from "../lib/identification";
 import type { detail } from "../schemas/prescriptionSchema";
 export const prescriptionsRoute = new Hono<{ Variables: authVariables }>()
-
-  //ADD PRESCRIPTION
+  /*prescriptions */
   .post(
     "/create/:querieId",
     zValidator("json", prescriptionDetailSchema),
@@ -92,10 +91,8 @@ export const prescriptionsRoute = new Hono<{ Variables: authVariables }>()
         console.log("Error creating prescription: ", e);
         return c.json({ success: false, error: "Error creating prescription" });
       }
-    }
+    },
   )
-
-  //ADD PRESCRIPTION
   .put(
     "/:querieId",
     zValidator("json", prescriptionDetailSchema),
@@ -130,7 +127,10 @@ export const prescriptionsRoute = new Hono<{ Variables: authVariables }>()
         await db
           .delete(PrescriptionsDetails)
           .where(
-            eq(PrescriptionsDetails.prescriptionId, findQuery[0].prescriptionId)
+            eq(
+              PrescriptionsDetails.prescriptionId,
+              findQuery[0].prescriptionId,
+            ),
           );
 
         // Iterate over each prescription detail
@@ -176,10 +176,8 @@ export const prescriptionsRoute = new Hono<{ Variables: authVariables }>()
         console.log("Error creating prescription: ", e);
         return c.json({ success: false, error: "Error creating prescription" });
       }
-    }
+    },
   )
-
-  //Obtener la prescripcion
   .get("/", async (c) => {
     const user = c.get("user");
     if (!user)
@@ -225,7 +223,7 @@ export const prescriptionsRoute = new Hono<{ Variables: authVariables }>()
 
       return c.json(
         { exist: true, error: null, data: result as detail[] },
-        200
+        200,
       );
     } else {
       return c.json({ exist: false, error: null, data: [] }, 200);

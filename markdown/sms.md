@@ -1,4 +1,4 @@
-# Guía de Usuario: Enviar mensajes por WhatsApp
+# Guía de Usuario: `Enviar mensajes por WhatsApp`
 
 Para enviar un mensaje, asegúrate de tener una sesión activa en tu cuenta de WhatsApp.
 

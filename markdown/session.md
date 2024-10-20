@@ -1,4 +1,4 @@
-# Guía de Usuario: Iniciar sesión con tu cuenta de WhatsApp
+# Guía de Usuario: `Iniciar sesión con tu cuenta de WhatsApp`
 
 ## Iniciar sesión
 

@@ -160,6 +160,28 @@ export const drugsRoute = new Hono<{ Variables: authVariables }>()
 
     return c.json({ success: true, data: x });
   })
+  .get("/presentations/:id", async (c) => {
+    const user = c.get("user");
+    if (!user) return c.json({ success: false, data: null }, 401);
+    if (user.role !== "DOCTOR")
+      return c.json({ success: false, data: null }, 401);
+
+    const doctorId = await doctorIdentification(user.id, user.role);
+    if (!doctorId) return c.json({ success: false, data: null }, 401);
+
+    const id = c.req.param("id");
+
+    if (!id) return c.json({ success: false, data: null }, 401);
+
+    const [data] = await db
+      .select({ presentations: Drugs.presentations })
+      .from(Drugs)
+      .where(and(eq(Drugs.id, id), eq(Drugs.doctorId, doctorId)));
+
+    if (!data) return c.json({ success: false, data: null }, 401);
+
+    return c.json({ success: true, data: data.presentations ?? [] });
+  })
   //agregar
   .post("/", zValidator("json", drugsSchema), async (c) => {
     const user = c.get("user");

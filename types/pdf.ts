@@ -4,6 +4,8 @@ export type Conciliations = {
   total: number;
   cordobas: number;
   dollars: number;
+  fal: number;
+  sob: number;
 };
 
 export type ChartData = {

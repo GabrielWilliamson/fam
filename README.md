@@ -1,3 +1,4 @@
+
  entrar a
  psqlpsql -U fameduser -d famed
 

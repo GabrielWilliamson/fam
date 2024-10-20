@@ -244,6 +244,7 @@ export const servicesRoute = new Hono<{ Variables: authVariables }>()
 
     const assistant = await db
       .select({
+        userId: Assistants.userId,
         total: Assistants.total,
         cordobas: Assistants.cordobas,
         dolars: Assistants.dollars,
@@ -265,6 +266,7 @@ export const servicesRoute = new Hono<{ Variables: authVariables }>()
     const result = schema.safeParse(body);
 
     if (!result.success) {
+      console.log(result.error);
       return c.json({ success: false, error: "Error" }, 500);
     }
 
@@ -283,12 +285,19 @@ export const servicesRoute = new Hono<{ Variables: authVariables }>()
     const grandTotal =
       result.data.cordobas || 0 + result.data.dolares || 0 * currentRate;
 
+    const falt = result.data.faltanteC + result.data.faltanteD * currentRate;
+    const sob = result.data.sobranteC + result.data.sobranteD * currentRate;
+
+    console.log(result.data.cordobas);
+
     await db.insert(Flows).values({
       flow: "conciliation",
       description: "conciliation",
       doctorId: doctorId,
-      chargeTo: user.id,
+      chargeTo: assistant[0].userId,
       total: grandTotal,
+      fal: falt,
+      sob: sob,
       cordobas: result.data.cordobas ?? 0,
       dollars: result.data.dolares ?? 0,
     });
@@ -296,9 +305,9 @@ export const servicesRoute = new Hono<{ Variables: authVariables }>()
     await db
       .update(Assistants)
       .set({
-        dollars: setTotalDolares,
-        cordobas: setTotalCordobas,
-        total: total,
+        dollars: 0,
+        cordobas: 0,
+        total: 0,
       })
       .where(eq(Assistants.id, assistantId));
 

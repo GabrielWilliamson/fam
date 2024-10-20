@@ -1,4 +1,4 @@
-# Guía de Usuario: **Expediente Pediátrico**
+# Guía de Usuario: `Expediente Pediátrico`
 
 ## Información del Paciente
 

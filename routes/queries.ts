@@ -128,7 +128,6 @@ export const queriesRoute = new Hono<{ Variables: authVariables }>()
       200,
     );
   })
-
   //Create query emergency
   .post("/emergency/:patientId", async (c) => {
     const user = c.get("user");
@@ -208,10 +207,10 @@ export const queriesRoute = new Hono<{ Variables: authVariables }>()
     const result = await db
       .insert(Queries)
       .values({
-        dateId: dateInfo[0].dateId!,
-        idFile: dateInfo[0].idFile!,
-        doctorId: dateInfo[0].doctorId!,
+        idFile: patient.fileId!,
+        doctorId: doctorId!,
         status: "process",
+        emergency: true,
       })
       .returning({
         querieId: Queries.id,
@@ -220,11 +219,6 @@ export const queriesRoute = new Hono<{ Variables: authVariables }>()
     await db.insert(Exams).values({
       querieId: result[0].querieId,
     });
-
-    await db
-      .update(Dates)
-      .set({ status: "process" })
-      .where(eq(Dates.id, dateId));
 
     return c.json(
       {

@@ -1,4 +1,4 @@
-# Guía de Usuario: **Interfaz de Gestión de Pacientes Pediátricos**
+# Guía de Usuario: `Interfaz de Gestión de Pacientes Pediátricos`
 
 Esta guía te ayudará a comprender cómo utilizar la interfaz para agregar y gestionar pacientes pediátricos.
 

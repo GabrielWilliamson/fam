@@ -13,8 +13,12 @@ export type tRate = z.infer<typeof rateSchema>;
 
 export function generateConciliationSchema(cordobas: number, dolares: number) {
   const conciliationSchema = z.object({
-    cordobas: z.number().max(cordobas).default(0),
-    dolares: z.number().max(dolares).default(0),
+    cordobas: z.number().default(0),
+    dolares: z.number().default(0),
+    faltanteC: z.number().default(0),
+    sobranteC: z.number().default(0),
+    faltanteD: z.number().default(0),
+    sobranteD: z.number().default(0),
   });
   return conciliationSchema;
 }

@@ -379,4 +379,49 @@ export const usersRoute = new Hono<{ Variables: authVariables }>()
     // Serve the file
     const file = Bun.file(filePath);
     return new Response(file);
+  })
+  .post("/logo", zValidator("form", fileSchema), async (c) => {
+    const user = c.get("user");
+    if (!user) return c.json({ success: false, error: "unauthorized" }, 401);
+
+    try {
+      const { file } = c.req.valid("form");
+      const logosDir = join(process.cwd(), "logos");
+
+      const fileName = `${user.id}`;
+
+      const filePath = join(logosDir, fileName);
+      await Bun.write(filePath, await file.arrayBuffer());
+
+      return c.json({ success: true, error: "" });
+    } catch (error) {
+      console.error("Error al guardar el archivo:", error);
+      return c.json(
+        { success: false, error: "Error al procesar el archivo" },
+        500,
+      );
+    }
+  })
+  .get("/logos", async (c) => {
+    const user = c.get("user");
+
+    if (user === null)
+      return c.json({ success: false, error: "No autorizado" }, 401);
+
+    const filePath = join(__dirname, `../logos/${user.id}`);
+
+    // Validate that the file is within the pictures directory
+    const normalizedPath = join(filePath);
+    const picturesDir = join(__dirname, "../logos");
+    if (!normalizedPath.startsWith(picturesDir)) {
+      return c.text("Access denied", 403);
+    }
+
+    if (!existsSync(filePath)) {
+      return c.text("File not found", 404);
+    }
+
+    // Serve the file
+    const file = Bun.file(filePath);
+    return new Response(file);
   });

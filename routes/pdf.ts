@@ -14,6 +14,7 @@ import {
   Drugs,
   Flows,
 } from "../db/schemas";
+import { transformAddress, transformOrigin } from "../lib/patients";
 import { getResource } from "../lib/store";
 import type { authVariables } from "../types/auth";
 import doctorIdentification from "../lib/identification";
@@ -83,6 +84,83 @@ async function loadDoctorExternal(doctorId: string): Promise<ExternalDoc> {
 }
 
 export const pdfRoute = new Hono<{ Variables: authVariables }>()
+
+  .get("/con", async (c) => {
+    const user = c.get("user");
+    if (!user || user.role !== "DOCTOR") {
+      return c.json(
+        { success: false, message: "Unauthorized access", data: null },
+        401,
+      );
+    }
+
+    const doctorId = await doctorIdentification(user.id, user.role);
+    if (!doctorId) {
+      return c.json(
+        {
+          success: false,
+          message: "Doctor identification failed",
+          data: null,
+        },
+        401,
+      );
+    }
+
+    const patientId = c.req.query("patientId");
+    if (!patientId) {
+      return c.json(
+        { success: false, message: "Patient ID is required", data: null },
+        400,
+      );
+    }
+
+    const [patientData] = await db
+      .select({
+        name: Patients.name,
+        date: Patients.date,
+        sex: Patients.sex,
+        dni: Patients.dni,
+        phone: Patients.phone,
+        origin: Patients.address,
+      })
+      .from(Patients)
+      .where(and(eq(Patients.id, patientId), eq(Patients.doctorId, doctorId)));
+
+    if (!patientData) {
+      return c.json(
+        { success: false, message: "Patient not found", data: null },
+        404,
+      );
+    }
+
+    const relatives = await db
+      .select({
+        name: Relatives.name,
+        dni: Relatives.dni,
+        phone: Relatives.phone,
+        relation: Relatives.relation,
+        civilStatus: Relatives.civilStatus,
+      })
+      .from(Relatives)
+      .where(eq(Relatives.patientId, patientId));
+
+    const dataP = {
+      name: patientData.name,
+      date: patientData.date,
+      origin: transformOrigin(patientData.origin ?? ""),
+      address: transformAddress(patientData.origin),
+      sex: patientData.sex,
+      dni: patientData.dni,
+      phone: patientData.phone,
+    };
+
+    const responseData = {
+      patient: dataP,
+      relatives: relatives,
+    };
+
+    return c.json({ success: true, message: "", data: responseData });
+  })
   //internal header
   .get("/internal", async (c) => {
     const user = c.get("user");
@@ -649,6 +727,50 @@ export const pdfRoute = new Hono<{ Variables: authVariables }>()
 
     return c.json({ success: true, data: data as Incomes[], error: "" }, 200);
   })
+  .get("/inco", async (c) => {
+    const user = c.get("user");
+    if (!user || user.role !== "DOCTOR")
+      return c.json({ success: false, data: null, error: "unautorized" }, 401);
+
+    const doctorId = await doctorIdentification(user.id, user.role);
+    if (!doctorId)
+      return c.json({ success: false, data: null, error: "unautorized" }, 401);
+
+    const fromDat = c.req.query("from");
+    const toDat = c.req.query("to");
+
+    if (!fromDat || !toDat) {
+      return c.json({ success: false, data: null, error: "error" }, 400);
+    }
+
+    const fromDate = new Date(fromDat);
+    const toDate = new Date(toDat);
+
+    fromDate.setHours(0, 0, 0, 0);
+    toDate.setHours(23, 59, 59, 0);
+
+    const data = await db
+      .select({
+        date: sql<string>`to_char(${Flows.createdAt}, 'DD-MM-YYYY')`,
+        totalCordobas: sql<number>`SUM(${Flows.cordobas})`,
+        totalDollars: sql<number>`SUM(${Flows.dollars})`,
+      })
+      .from(Queries)
+      .innerJoin(Flows, eq(Queries.flowId, Flows.id))
+      .where(
+        and(
+          eq(Queries.doctorId, doctorId),
+          eq(Queries.status, "end"),
+          isNotNull(Queries.flowId),
+          gte(sql`DATE(${Flows.createdAt})`, sql`DATE(${fromDate})`),
+          lte(Flows.createdAt, sql`${toDate}::timestamp + interval '1 day'`),
+        ),
+      )
+      .groupBy(sql`to_char(${Flows.createdAt}, 'DD-MM-YYYY')`);
+
+    return c.json({ success: true, data: data, error: "" }, 200);
+  })
+
   .get("/conciliations", async (c) => {
     const user = c.get("user");
     if (!user || user.role !== "DOCTOR") {
@@ -691,6 +813,8 @@ export const pdfRoute = new Hono<{ Variables: authVariables }>()
           total: Flows.total,
           cordobas: Flows.cordobas,
           dollars: Flows.dollars,
+          fal: Flows.fal,
+          sob: Flows.sob,
         })
         .from(Flows)
         .innerJoin(Users, eq(Flows.chargeTo, Users.id))

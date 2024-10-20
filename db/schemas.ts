@@ -253,6 +253,8 @@ export const Flows = pgTable("flows", {
   cordobas: doublePrecision("cordobas").notNull(),
   dollars: doublePrecision("dollars").notNull(),
   description: text("description").notNull(),
+  fal: doublePrecision("fal"),
+  sob: doublePrecision("sob"),
   flow: Flow("flow").notNull(),
   bankAccountId: uuid("bankAccountId").references(() => BankAccounts.id),
   createdAt: timestamp("createdAt").notNull().defaultNow(),
