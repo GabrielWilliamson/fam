@@ -165,7 +165,9 @@ function restoreDatabase(): Promise<void> {
 }
 
 async function backupDatabase(): Promise<void> {
-  const connectionString = `postgresql://${DB_USER}:${encodeURIComponent(PASS!)}@localhost/${DB_NAME}`;
+  const connectionString = `postgresql://${DB_USER}:${PASS}@localhost/${DB_NAME}`;
+
+  console.log(connectionString);
 
   const proc = Bun.spawn(
     [
