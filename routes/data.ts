@@ -193,9 +193,6 @@ async function backupDatabase(): Promise<void> {
   }
 }
 
-// Llamar a la función
-backupDatabase();
-
 function compressBackup(): Promise<void> {
   return new Promise((resolve, reject) => {
     exec("gzip ./backup/backup.dump", (error, stdout, stderr) => {
