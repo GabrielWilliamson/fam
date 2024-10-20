@@ -72,7 +72,7 @@ sudo chown ubuntu:ubuntu /etc/famed.env
 
 # reiniciar el servicio
 
-# si se realizan cambios en la app
+    # si se realizan cambios en la app
 
     sudo systemctl restart famed.service
 
@@ -83,7 +83,6 @@ sudo chown ubuntu:ubuntu /etc/famed.env
 
     # ver logs detallados
       sudo journalctl -xeu famed.service
-
 
     # realtime logs
     sudo journalctl -u famed.service -f
