@@ -165,23 +165,21 @@ function restoreDatabase(): Promise<void> {
 }
 
 async function backupDatabase(): Promise<void> {
+  const connectionString = `postgresql://${DB_USER}:${encodeURIComponent(PASS!)}@localhost/${DB_NAME}`;
+
   const proc = Bun.spawn(
     [
       "pg_dump",
-      "-U",
-      DB_USER!,
-      "-h",
-      "localhost",
+      "-d",
+      connectionString,
       "-F",
       "c",
       "-b",
       "-v",
       "-f",
       "./backup/backup.dump",
-      DB_NAME!,
     ],
     {
-      env: { PGPASSWORD: PASS },
       stdout: "pipe",
       stderr: "pipe",
     },
