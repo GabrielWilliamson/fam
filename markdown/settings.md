@@ -22,6 +22,12 @@ Esta sección te permite **gestionar los respaldos y restauraciones** de la base
 2. **Confirmación:**
    - Una vez completada, se mostrará un mensaje confirmando que la **restauración fue exitosa**.
 
+
+
+> [!WARNING]
+> Asegúrate de realizar un respaldo de la base de datos antes de realizar cualquier restauración. Tu información es importante.
+
+
 ---
 
 ## **Sesiones de WhatsApp**
@@ -40,5 +46,3 @@ En esta sección puedes **gestionar las sesiones activas** de WhatsApp de manera
 > Si borras las sesiones, los doctores tendrán que volver a iniciar la sesión de WhatsApp en el sistema.
 
 ---
-
-> **Nota:** Asegúrate de **realizar un respaldo** de la base de datos antes de realizar cualquier restauración. **Tu información es importante.**

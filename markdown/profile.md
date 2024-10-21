@@ -38,11 +38,9 @@ En esta sección, puedes **gestionar tus credenciales de seguridad**.
    - Escribe tu nueva contraseña en el campo designado.
    - **Formato válido:** Debe tener una cantidad adecuada de caracteres.
 
-
 3. **Confirmar Nueva Contraseña:**
    - Reingresa tu nueva contraseña para confirmar.
    - **Formato válido:** Debe tener una cantidad adecuada de caracteres.
-
 
 4. **Confirmación de Cambio:**
    - Haz clic en el botón **Actualizar** para completar el cambio de clave de acceso.
@@ -51,4 +49,4 @@ En esta sección, puedes **gestionar tus credenciales de seguridad**.
 ---
 
 > [!NOTE]
->  Es fundamental que recuerdes tu nueva clave de acceso para garantizar la seguridad de tu cuenta.
+> Es fundamental que recuerdes tu nueva clave de acceso para garantizar la seguridad de tu cuenta.

@@ -47,7 +47,11 @@ type PaginatedResponse = {
 };
 
 const address = z.object({ address: pediatricSchema.shape.address });
-
+const phone = z.object({
+  phone: z
+    .string({ required_error: "Este campo es requerido" })
+    .min(8, "Complete este campo"),
+});
 export const patientsRoute = new Hono<{ Variables: authVariables }>()
 
   .get("/all", async (c) => {
@@ -620,6 +624,37 @@ export const patientsRoute = new Hono<{ Variables: authVariables }>()
     await db
       .update(Patients)
       .set({ address: updatedAddress })
+      .where(eq(Patients.id, id));
+    return c.json({ success: true, error: "" });
+  })
+  .patch("/phone/:id", zValidator("json", phone), async (c) => {
+    const user = c.get("user");
+    if (!user) return c.json({ success: false, error: "unauthorized" }, 401);
+    if (user.role === "ADMIN")
+      return c.json({ success: false, error: "unauthorized" }, 401);
+
+    const id = c.req.param("id");
+
+    if (!id) return c.json({ success: false, error: "id requerido" }, 500);
+
+    const doctorId = await doctorIdentification(user.id, user.role);
+    if (!doctorId)
+      return c.json({ success: false, error: "unauthorized" }, 401);
+
+    const data = c.req.valid("json");
+
+    const [patient] = await db
+      .select({
+        phone: Patients.phone,
+      })
+      .from(Patients)
+      .where(and(eq(Patients.doctorId, doctorId), eq(Patients.id, id)));
+
+    if (!patient) return c.json({ success: false, error: "no found" }, 500);
+
+    await db
+      .update(Patients)
+      .set({ phone: data.phone })
       .where(eq(Patients.id, id));
     return c.json({ success: true, error: "" });
   });

@@ -12,4 +12,4 @@
 
 ## **Regresar al Login**
 
-1. Si no deseas recuperar la contraseña, haz clic en el botón **Regresar al Login** para volver a la página de inicio de sesión.
+1. Si no deseas recuperar la contraseña, haz clic en el botón **Regresar al login** para volver a la página de inicio de sesión.

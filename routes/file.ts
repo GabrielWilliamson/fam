@@ -21,7 +21,7 @@ import {
   drogasSchema,
   tobacoSchema,
 } from "../schemas/generalSchema";
-import type { z } from "zod";
+import { z } from "zod";
 
 type Query = {
   createdAt: Date;
@@ -41,6 +41,8 @@ type PaginatedResponse = {
     totalPages: number;
   };
 };
+
+const phone = z.object({ phone: RelativeSchema.shape.phone });
 
 export const fileRoute = new Hono<{ Variables: authVariables }>()
 
@@ -126,6 +128,38 @@ export const fileRoute = new Hono<{ Variables: authVariables }>()
       .where(eq(Relatives.patientId, id));
 
     return c.json({ success: true, data: ls });
+  })
+  .patch("/relative/:id", zValidator("json", phone), async (c) => {
+    const user = c.get("user");
+    if (!user) return c.json({ success: false, error: "unauthorized" }, 401);
+    if (user.role === "ADMIN")
+      return c.json({ success: false, error: "unauthorized" }, 401);
+
+    const id = c.req.param("id");
+
+    if (!id) return c.json({ success: false, error: "id requerido" }, 500);
+
+    const doctorId = await doctorIdentification(user.id, user.role);
+    if (!doctorId)
+      return c.json({ success: false, error: "unauthorized" }, 401);
+
+    const data = c.req.valid("json");
+
+    const [patient] = await db
+      .select({
+        doctorId: Patients.doctorId,
+      })
+      .from(Relatives)
+      .innerJoin(Patients, eq(Relatives.patientId, Patients.id))
+      .where(and(eq(Patients.doctorId, doctorId), eq(Relatives.id, id)));
+
+    if (!patient) return c.json({ success: false, error: "no found" }, 500);
+
+    await db
+      .update(Relatives)
+      .set({ phone: data.phone })
+      .where(eq(Relatives.id, id));
+    return c.json({ success: true, error: "" });
   })
   //list diases
   .get("/diases", async (c) => {

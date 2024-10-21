@@ -18,7 +18,6 @@ Aquí puedes gestionar la información de los familiares del paciente:
 
 ## Antecedentes Familiares Patológicos
 
-
 Hay dos pestañas principales: `Infecto-contagiosas` y `Hereditarias`.
 
 > [!NOTE]
@@ -53,15 +52,9 @@ Esta sección te permite registrar los antecedentes personales patológicos. Los
 
 ## Historial de Consultas
 
-
 Aquí puedes ver el historial de consultas del paciente:
 
-
-
 ## Historial de Prescripciones
-
-
-
 
 ## Consejos Generales:
 

@@ -13,21 +13,17 @@ Por defecto, el sistema selecciona el día actual. No es posible agendar citas p
 Debes completar tanto la hora de inicio como la hora de fin de la cita en los campos correspondientes. Asegúrate de elegir horarios realistas, por ejemplo, de `8:00 a.m.` a `9:00 a.m.`. Ten en cuenta las siguientes reglas:
 
 - **Duración mínima:** 30 minutos.
-- **Duración máxima:** 120 minutos. (dos horas)
+- **Duración máxima:** 120 minutos (dos horas).
 - **Horarios disponibles:** entre `6:00 a.m.` y `7:00 p.m.`.
 
 ## 4. Confirma la cita
 
-Una vez seleccionados el día y los horarios, haz clic en el botón `Confirmar cita`
+Una vez seleccionados el día y los horarios, haz clic en el botón `Confirmar cita`.
 
 ---
 
 > [!NOTE]
-> El calendario reflejará tu cita para el día seleccionado.
-Además, puedes navegar entre las vistas de Mes, Semana o Dia, utilizando los botones ubicados en la
-parte superior izquierda del calendario. (la Vista por defecto es la Semana)
-
-
+> El calendario reflejará tu cita para el día seleccionado. Además, puedes navegar entre las vistas de Mes, Semana o Día, utilizando los botones ubicados en la parte superior izquierda del calendario. (La vista por defecto es la Semana.)
 
 > [!TIP]
-> Si por ejemplo quieres agendar en el 15 de mayo, da un click en el 15 esto seleccionara ese día automaticomente.
+> Si, por ejemplo, quieres agendar para el 15 de mayo, da un clic en el 15; esto seleccionará ese día automáticamente.

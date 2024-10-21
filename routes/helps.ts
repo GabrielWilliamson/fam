@@ -24,7 +24,14 @@ const roleSchema = z.object({
     "queries",
     "view",
   ]),
-  ASSISTANT: z.enum(["patients", "profile", "reset", "sms"]),
+  ASSISTANT: z.enum([
+    "patients",
+    "profile",
+    "reset",
+    "sms",
+    "dates",
+    "servicesa",
+  ]),
   ADMIN: z.enum(["profile", "reset", "users", "settings"]),
 });
 
@@ -34,7 +41,6 @@ const validateFileForRole = (
   name: string,
 ) => roleSchema.shape[role].safeParse(name).success;
 
-// Función auxiliar para buscar un archivo
 async function searchFile(name: string): Promise<string | null> {
   try {
     const filePath = join(__dirname, `../markdown/${name}.md`);

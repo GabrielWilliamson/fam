@@ -28,7 +28,14 @@ Hay dos pestañas principales: `Infecto-contagiosas` y `Hereditarias`.
 
 ## Antecedentes Personales No Patológicos
 
-falta
+Esta sección te permite registrar los antecedentes personales no patológicos. Aquí puedes incluir:
+
+- **Consumo de alcohol**
+- **Consumo de drogas**
+- **Consumo de tabaco**
+
+> [!WARNING]
+> Si registras que un paciente consume drogas, por ejemplo, no podrás eliminar ese registro. Podrás actualizar la duración o la cantidad, pero no quitar el registro completamente.
 
 ## Antecedentes Personales Patológicos
 
@@ -43,7 +50,7 @@ Esta sección te permite registrar los antecedentes personales patológicos. Los
 > [!NOTE]
 > Ninguno de estos campos es obligatorio. Puedes registrar una infección, y en el futuro, si ocurre otra, agregarla sin problema.
 
-## Consejos generales:
+## Consejos Generales
 
 - Asegúrate de guardar los cambios después de cada modificación.
 - Verifica la información regularmente para mantenerla actualizada.

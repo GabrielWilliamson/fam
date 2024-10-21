@@ -16,7 +16,7 @@ Esta interfaz te permite acceder a tu cuenta introduciendo tu **Email** y **Clav
 - En el campo etiquetado como **Clave**, debes ingresar al menos 6 caracteres.
 
 > [!TIP]
-> Si quieres ver la contraseña mientras la escribes, puedes hacer clic en el icono del ojo para mostrar u ocultar la clave.
+> Si quieres ver la contraseña mientras la escribes, puedes hacer clic en el ícono del ojo para mostrar u ocultar la clave.
 
 ### 3. **Olvidaste tu Clave**
 

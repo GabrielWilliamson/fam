@@ -12,27 +12,23 @@ En esta sección, podrás ver todas las operaciones realizadas por tu asistente,
 
 - **Córdobas**
 
-> [!TIP]
-> Muestra el total de efectivo en córdobas. Tienes la opción de asignar
-> dinero a tu asistente para que entregue el cambio correspondiente a los pacientes cuando sea necesario.
+  > [!TIP]
+  > Muestra el total de efectivo en córdobas. Tienes la opción de asignar dinero a tu asistente para que entregue el cambio correspondiente a los pacientes cuando sea necesario.
 
 - **Dólares**
 
-> [!TIP]
-> Aquí se muestra el total de efectivo en dólares. También tienes la
-> opción de modificar la tasa de cambio si es necesario.
+  > [!TIP]
+  > Aquí se muestra el total de efectivo en dólares. También tienes la opción de modificar la tasa de cambio si es necesario.
 
 - **Efectivo Total**
 
-> [!TIP]
-> Indica la cantidad total de efectivo disponible en córdobas.
-> Puedes entregar ese monto a tu asistente.
+  > [!TIP]
+  > Indica la cantidad total de efectivo disponible en córdobas. Puedes entregar ese monto a tu asistente.
 
 - **Gastos del Día**
 
-> [!TIP]
-> Muestra el total de gastos que se han realizado durante el día.
-> Puedes ver el detalle de cada gasto realizado.
+  > [!TIP]
+  > Muestra el total de gastos que se han realizado durante el día. Puedes ver el detalle de cada gasto realizado.
 
 ## Tabla de Consultas Recientes Cobradas
 
@@ -48,25 +44,23 @@ En este apartado visualizarás los detalles de tus ingresos y gastos.
 
 - **Córdobas**
 
-> [!TIP]
-> Muestra el total de efectivo en córdobas.
+  > [!TIP]
+  > Muestra el total de efectivo en córdobas.
 
 - **Dólares**
 
-> [!TIP]
-> Aquí se muestra el total de efectivo en dólares. También tienes la
-> opción de modificar la tasa de cambio si es necesario.
+  > [!TIP]
+  > Aquí se muestra el total de efectivo en dólares. También tienes la opción de modificar la tasa de cambio si es necesario.
 
 - **Efectivo Total**
 
-> [!TIP]
-> Indica la cantidad total de efectivo disponible en córdobas.
+  > [!TIP]
+  > Indica la cantidad total de efectivo disponible en córdobas.
 
 - **Gastos del Día**
 
-> [!TIP]
-> Muestra el total de gastos que se han realizado durante el día.
-> Puedes ver el detalle de cada gasto realizado.
+  > [!TIP]
+  > Muestra el total de gastos que se han realizado durante el día. Puedes ver el detalle de cada gasto realizado.
 
 ## Consultas Atendidas
 

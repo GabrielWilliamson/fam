@@ -43,9 +43,6 @@ export const RelativeSchema = z.object({
     .max(130, { message: "Nombre incorrecto" }),
   phone: z
     .string({ required_error: "Este campo es requerido" })
-    .max(8, {
-      message: "Teléfono incorrecto",
-    })
     .min(8, { message: "Teléfono incorrecto" }),
   nationality: country,
   DNI: z

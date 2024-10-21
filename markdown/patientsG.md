@@ -21,11 +21,11 @@ En esta sección, podrás registrar nuevos pacientes en el sistema. Completa los
 - **Municipio:** Selecciona el municipio correspondiente al paciente.
 - **Dirección:** Ingresa la dirección donde reside el paciente.
 - **Fecha de Nacimiento:** Usa el selector de fecha para especificar la fecha de nacimiento del paciente.
-- **Cédula**: Cédula del paciente.
-- **Teléfono**: Teléfono del paciente.
-- `Guardar:` Guarda la información del paciente en el sistema.
-- `Agendar Cita:` Guarda al paciente y te mostrará un mensaje de confirmación, redirigiéndote a la interfaz de citas para que puedas agendar una cita para el paciente.
-- `Agregar a la Lista de Espera:` Guarda al paciente y lo añade a la lista de espera.
+- **Cédula:** Cédula del paciente.
+- **Teléfono:** Teléfono del paciente.
+- **Guardar:** Guarda la información del paciente en el sistema.
+- **Agendar Cita:** Guarda al paciente y te mostrará un mensaje de confirmación, redirigiéndote a la interfaz de citas para que puedas agendar una cita para el paciente.
+- **Agregar a la Lista de Espera:** Guarda al paciente y lo añade a la lista de espera.
 
 > [!CAUTION]
 > Asegúrate de completar todos los campos obligatorios al agregar un nuevo paciente.

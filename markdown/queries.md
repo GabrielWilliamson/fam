@@ -47,5 +47,4 @@ En la parte inferior de la pantalla se encuentra el botón de `Finalizar la cons
 > Si no has terminado la consulta y necesitas realizar otra acción, puedes regresar a cualquier otra sección. Si deseas, podrás continuarla después. Encontrarás un enlace para continuar la consulta en la sección de `Hoy`, específicamente en la tabla de consultas en proceso.
 
 > [!NOTE]
-> Puedes leer más sobre el pago en el ícono de ayuda dentro del modal
-de Finalizar consulta.
+> Puedes leer más sobre el pago en el ícono de ayuda dentro del modal de Finalizar consulta.
