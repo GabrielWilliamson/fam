@@ -17,5 +17,12 @@ jobs:
       - name: Check out code
         uses: actions/checkout@v3
 
+      - name: Creiate folders
+        run: |
+          mkdir copys
+          mkdir backup
+          mkdir pictures
+          mkdir logos
+
       - name: Restart the service
         run: sudo systemctl restart famed.service

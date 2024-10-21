@@ -58,6 +58,10 @@ build/Release
 
 node_modules/
 jspm_packages/
+logos/
+pictures/
+copys/
+backup/
 
 
 
