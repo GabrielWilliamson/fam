@@ -10,6 +10,9 @@ import { sql } from "drizzle-orm";
 import { db } from "../db/db";
 import { z } from "zod";
 import { zValidator } from "@hono/zod-validator";
+import { promisify } from "util";
+
+const execAsync = promisify(exec);
 
 const { DB_USER, DB_NAME, PASS, SMTP_EMAIL, SMTP_GMAIL_PASS } = process.env;
 
@@ -105,29 +108,29 @@ export const dataRoute = new Hono<{ Variables: authVariables }>()
   });
 
 function truncateTables(): Promise<void> {
-  return new Promise(async (resolve, reject) => {
+  return new Promise(async (resolve) => {
     const script = `
     #!/bin/bash
     DB_NAME="${DB_NAME}"
     DB_USER="${DB_USER}"
-
+    PGPASSWORD="${PASS}"
 
     # Truncar tablas en el esquema public
-    tables_public=$(psql -U "$DB_USER" -d "$DB_NAME" -t -c "SELECT tablename FROM pg_tables WHERE schemaname = 'public';")
+    tables_public=$(PGPASSWORD="${PASS}" psql -U "$DB_USER" -d "$DB_NAME" -t -c "SELECT tablename FROM pg_tables WHERE schemaname = 'public';")
 
     for table in $tables_public; do
       echo "Truncando tabla en public: $table"
-      psql -U "$DB_USER" -d "$DB_NAME" -c "TRUNCATE TABLE \"public\".\"$table\" CASCADE;" 2>/dev/null || echo "Tabla $table no existe, omitiendo."
+      PGPASSWORD="${PASS}" psql -U "$DB_USER" -d "$DB_NAME" -c "TRUNCATE TABLE \\"public\\".\\"$table\\" CASCADE;" 2>/dev/null || echo "Tabla $table no existe, omitiendo."
     done
 
     # Truncar tablas en el esquema drizzle
-    psql -U "$DB_USER" -d "$DB_NAME" -c "TRUNCATE TABLE \"drizzle\".\"__drizzle_migrations\" CASCADE;" 2>/dev/null || echo "Tabla __drizzle_migrations no existe, omitiendo."
-
+    PGPASSWORD="${PASS}" psql -U "$DB_USER" -d "$DB_NAME" -c "TRUNCATE TABLE \\"drizzle\\".\\"__drizzle_migrations\\" CASCADE;" 2>/dev/null || echo "Tabla __drizzle_migrations no existe, omitiendo."
     `;
+
     exec(script, (error, stdout, stderr) => {
       if (error) {
-        console.error(`Error truncated tables: ${error.message}`);
-        return reject(error);
+        console.error(`Error truncating tables: ${error.message}`);
+        return;
       }
       if (stderr) {
         console.log(`stderr ===> ${stderr}`);
@@ -147,8 +150,8 @@ function restoreDatabase(): Promise<void> {
       #!/bin/bash
       DB_NAME="${DB_NAME}"
       DB_USER="${DB_USER}"
-        pg_restore -U "${DB_USER}" -d "${DB_NAME}"  --clean   "${fileCopyPath}"
-      `;
+      PGPASSWORD="${PASS}" pg_restore -U "${DB_USER}" -d "${DB_NAME}" --clean "${fileCopyPath}"
+    `;
 
     exec(script, (error, stdout, stderr) => {
       if (error) {
@@ -163,10 +166,6 @@ function restoreDatabase(): Promise<void> {
     });
   });
 }
-
-import { promisify } from "util";
-
-const execAsync = promisify(exec);
 
 async function backupDatabase(): Promise<void> {
   const connectionString = `postgresql://${DB_USER}:${PASS}@localhost/${DB_NAME}`;
