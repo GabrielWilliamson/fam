@@ -8,6 +8,15 @@ import { and, or, lte, gte, eq, asc, inArray } from "drizzle-orm/expressions";
 
 export const datesRoute = new Hono<{ Variables: authVariables }>()
 
+  /*
+  appoinment status
+
+  cancelled
+  scheduled
+  process
+  end
+  */
+
   // full appointments where status is scheduled
   .get("/", async (c) => {
     const user = c.get("user");
@@ -40,7 +49,6 @@ export const datesRoute = new Hono<{ Variables: authVariables }>()
 
     return c.json({ data: adjustedResults, success: true });
   })
-
   // CURRENT APPOINTMENTS
   .get("/current", async (c) => {
     const user = c.get("user");
@@ -69,8 +77,8 @@ export const datesRoute = new Hono<{ Variables: authVariables }>()
         and(
           eq(Dates.doctorId, doctorId),
           eq(Dates.status, "scheduled"),
-          and(gte(Dates.start, today), lte(Dates.end, tomorrow))
-        )
+          and(gte(Dates.start, today), lte(Dates.end, tomorrow)),
+        ),
       )
       .orderBy(asc(Dates.start));
 
@@ -85,7 +93,7 @@ export const datesRoute = new Hono<{ Variables: authVariables }>()
 
     return c.json({ success: true, data: adjustedResults });
   })
-
+  /*new */
   .post("/", async (c) => {
     const user = c.get("user");
     if (!user) return c.json({ success: false }, 401);
@@ -130,9 +138,9 @@ export const datesRoute = new Hono<{ Variables: authVariables }>()
           or(
             and(
               lte(dates.start, refineEnd), // La cita existente empieza antes que la nueva termine
-              gte(dates.end, startDate) // La cita existente termina después que la nueva comienza
-            )
-          )
+              gte(dates.end, startDate), // La cita existente termina después que la nueva comienza
+            ),
+          ),
         ),
     });
 
@@ -159,4 +167,38 @@ export const datesRoute = new Hono<{ Variables: authVariables }>()
       console.error("Error al crear la cita:", error);
       return c.json({ success: false, error: "Error al crear la cita" });
     }
+  })
+  /*cancel */
+  .patch("/cancel/:id", async (c) => {
+    const user = c.get("user");
+    if (!user) return c.json({ success: false, error: "unautorized" }, 401);
+    if (user.role === "ADMIN")
+      return c.json({ success: false, error: "unautorized" }, 401);
+
+    const doctorId = await doctorIdentification(user.id, user.role);
+    if (!doctorId) return c.json({ success: false, error: "unautorized" }, 401);
+
+    const id = c.req.param("id");
+
+    if (!id) {
+      return c.json(
+        { success: false, error: "No se encontro el id de la cita" },
+        404,
+      );
+    }
+
+    const [data] = await db
+      .select({ status: Dates.status })
+      .from(Dates)
+      .where(and(eq(Dates.id, id), eq(Dates.doctorId, doctorId)));
+
+    if (!data) return c.json({ success: false, error: "error" }, 401);
+
+    if (data.status === "cancelled" || data.status === "end") {
+      return c.json({ success: false, error: "error" }, 401);
+    }
+
+    await db.update(Dates).set({ status: "cancelled" }).where(eq(Dates.id, id));
+
+    return c.json({ success: true, error: "" });
   });
