@@ -62,19 +62,19 @@ export const helpsRoute = new Hono<{ Variables: authVariables }>().get(
     if (name === "forgot")
       return c.text(
         (await searchFile("forgot")) ?? "Error al buscar el archivo",
-        500,
+        200,
       );
 
     if (name === "login")
       return c.text(
         (await searchFile("login")) ?? "Error al buscar el archivo",
-        500,
+        200,
       );
 
     if (name === "reset")
       return c.text(
         (await searchFile("reset")) ?? "Error al buscar el archivo",
-        500,
+        200,
       );
 
     // Verificar si hay un usuario autenticado

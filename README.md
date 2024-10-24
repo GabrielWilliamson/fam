@@ -1,6 +1,6 @@
 
  entrar a
- psqlpsql -U fameduser -d famed
+ psql -U fameduser -d famed
 
 
  listar las tablas
